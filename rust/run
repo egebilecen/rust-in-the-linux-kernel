@@ -1,0 +1,3 @@
+#!/bin/bash
+insmod kernel_mod.ko
+rmmod kernel_mod.ko
