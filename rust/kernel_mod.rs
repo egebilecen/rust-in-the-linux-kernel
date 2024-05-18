@@ -1,34 +1,68 @@
 //! Rust kernel module.
 use kernel::prelude::*;
+use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
+use kernel::{file, miscdev};
 
 module! {
-    type: RustOutOfTree,
-    name: "rust_out_of_tree",
-    author: "Rust for Linux Contributors",
-    description: "Rust out-of-tree sample",
+    type: DeviceDriver,
+    name: "rust_misc_dev",
+    author: "Ege Bilecen",
+    description: "Miscellaneous device written in Rust.",
     license: "GPL",
 }
 
-struct RustOutOfTree {
-    numbers: Vec<i32>,
+struct Device {
+    buffer: Mutex<Vec<u8>>,
 }
 
-impl kernel::Module for RustOutOfTree {
-    fn init(__name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
-        pr_info!("Rust out-of-tree sample (init)\n");
+struct DeviceOperations;
 
-        let mut numbers = Vec::new();
-        numbers.try_push(72)?;
-        numbers.try_push(108)?;
-        numbers.try_push(200)?;
+#[vtable]
+impl file::Operations for DeviceOperations {
+    type Data = Arc<Device>;
+    type OpenData = Arc<Device>;
 
-        Ok(RustOutOfTree { numbers })
+    fn open(context: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
+        Ok(context.clone())
+    }
+
+    fn read(
+        data: ArcBorrow<'_, Device>,
+        _file: &file::File,
+        writer: &mut impl kernel::io_buffer::IoBufferWriter,
+        offset: u64,
+    ) -> Result<usize> {
+        if writer.is_empty() || offset != 0 {
+            return Ok(0);
+        }
+
+        let bytes = "Hello World!".as_bytes();
+        writer.write_slice(bytes)?;
+
+        Ok(bytes.len())
     }
 }
 
-impl Drop for RustOutOfTree {
+struct DeviceDriver {
+    _dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
+}
+
+impl kernel::Module for DeviceDriver {
+    fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
+        pr_info!("Initializing.\n");
+
+        let device = Arc::try_new(Device {
+            buffer: Mutex::new(Vec::new()),
+        })?;
+
+        Ok(DeviceDriver {
+            _dev: miscdev::Registration::new_pinned(fmt!("ee580"), device)?,
+        })
+    }
+}
+
+impl Drop for DeviceDriver {
     fn drop(&mut self) {
-        pr_info!("My numbers are {:?}\n", self.numbers);
-        pr_info!("Rust out-of-tree sample (exit)\n");
+        pr_info!("Exit.\n");
     }
 }
