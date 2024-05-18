@@ -2,6 +2,7 @@
 use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
+use core::cmp::min;
 
 module! {
     type: DeviceDriver,
@@ -32,14 +33,25 @@ impl file::Operations for DeviceOperations {
         writer: &mut impl kernel::io_buffer::IoBufferWriter,
         offset: u64,
     ) -> Result<usize> {
-        if writer.is_empty() || offset != 0 {
-            return Ok(0);
-        }
+        let offset = usize::try_from(offset)?;
+        let buffer = data.buffer.lock();
+        let len = min(writer.len(), buffer.len().saturating_sub(offset));
+        writer.write_slice(&buffer[offset..][..len])?;
 
-        let bytes = "Hello World!".as_bytes();
-        writer.write_slice(bytes)?;
+        Ok(len)
+    }
 
-        Ok(bytes.len())
+    fn write(
+        data: ArcBorrow<'_, Device>,
+        _file: &file::File,
+        reader: &mut impl kernel::io_buffer::IoBufferReader,
+        _offset: u64,
+    ) -> Result<usize> {
+        let recv_bytes = reader.read_all()?;
+        let mut buffer = data.buffer.lock();
+        (*buffer).try_extend_from_slice(&recv_bytes[..])?;
+
+        Ok(recv_bytes.len())
     }
 }
 
