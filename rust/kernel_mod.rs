@@ -1,8 +1,8 @@
 //! Rust kernel module.
+use core::cmp::min;
 use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
-use core::cmp::min;
 
 module! {
     type: DeviceDriver,
@@ -12,8 +12,13 @@ module! {
     license: "GPL",
 }
 
+struct DeviceInner {
+    in_buffer: Vec<u8>,
+    out_buffer: Vec<u8>,
+}
+
 struct Device {
-    buffer: Mutex<Vec<u8>>,
+    inner: Mutex<DeviceInner>,
 }
 
 struct DeviceOperations;
@@ -24,6 +29,11 @@ impl file::Operations for DeviceOperations {
     type OpenData = Arc<Device>;
 
     fn open(context: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
+        let mut device = (*context).inner.lock();
+
+        device.in_buffer.clear();
+        device.out_buffer.clear();
+
         Ok(context.clone())
     }
 
@@ -34,7 +44,10 @@ impl file::Operations for DeviceOperations {
         offset: u64,
     ) -> Result<usize> {
         let offset = usize::try_from(offset)?;
-        let buffer = data.buffer.lock();
+
+        let device = data.inner.lock();
+        let buffer = &device.in_buffer;
+
         let len = min(writer.len(), buffer.len().saturating_sub(offset));
         writer.write_slice(&buffer[offset..][..len])?;
 
@@ -48,8 +61,12 @@ impl file::Operations for DeviceOperations {
         _offset: u64,
     ) -> Result<usize> {
         let recv_bytes = reader.read_all()?;
-        let mut buffer = data.buffer.lock();
-        (*buffer).try_extend_from_slice(&recv_bytes[..])?;
+
+        let mut device = data.inner.lock();
+        let buffer = &mut device.in_buffer;
+
+        buffer.clear();
+        buffer.try_extend_from_slice(&recv_bytes[..])?;
 
         Ok(recv_bytes.len())
     }
@@ -64,7 +81,10 @@ impl kernel::Module for DeviceDriver {
         pr_info!("Initializing.\n");
 
         let device = Arc::try_new(Device {
-            buffer: Mutex::new(Vec::new()),
+            inner: Mutex::new(DeviceInner {
+                in_buffer: Vec::new(),
+                out_buffer: Vec::new(),
+            }),
         })?;
 
         Ok(DeviceDriver {
