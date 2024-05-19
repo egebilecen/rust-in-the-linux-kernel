@@ -1,5 +1,6 @@
 //! Rust kernel module.
 use core::cmp::min;
+use kernel::error::code;
 use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
@@ -13,6 +14,7 @@ module! {
 }
 
 struct DeviceInner {
+    is_in_use: bool,
     in_buffer: Vec<u8>,
     out_buffer: Vec<u8>,
 }
@@ -31,6 +33,11 @@ impl file::Operations for DeviceOperations {
     fn open(context: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
         let mut device = (*context).inner.lock();
 
+        if device.is_in_use {
+            return Err(code::EBUSY);
+        }
+
+        device.is_in_use = true;
         device.in_buffer.clear();
         device.out_buffer.clear();
 
@@ -70,6 +77,11 @@ impl file::Operations for DeviceOperations {
 
         Ok(recv_bytes.len())
     }
+
+    fn release(data: Arc<Device>, _file: &file::File) {
+        let mut device = data.inner.lock();
+        (*device).is_in_use = false;
+    }
 }
 
 struct DeviceDriver {
@@ -82,6 +94,7 @@ impl kernel::Module for DeviceDriver {
 
         let device = Arc::try_new(Device {
             inner: Mutex::new(DeviceInner {
+                is_in_use: false,
                 in_buffer: Vec::new(),
                 out_buffer: Vec::new(),
             }),
