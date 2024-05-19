@@ -5,14 +5,31 @@ use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
 
-const DEV_PREFIX: &str = "present80";
-
 module! {
     type: DeviceDriver,
     name: "rust_misc_dev",
     author: "Ege Bilecen",
     description: "Miscellaneous device written in Rust.",
     license: "GPL",
+}
+
+const DEV_PREFIX: &str = "present80";
+
+static mut KEY_DEV: Mutex<DeviceInner> = Mutex::new(DeviceInner {
+    is_in_use: false,
+    in_buffer: Vec::new(),
+    out_buffer: Vec::new(),
+});
+
+static mut ENCRYPTION_DEV: Mutex<DeviceInner> = Mutex::new(DeviceInner {
+    is_in_use: false,
+    in_buffer: Vec::new(),
+    out_buffer: Vec::new(),
+});
+
+struct DeviceDriver {
+    _key_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
+    _encrypt_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
 }
 
 enum DeviceType {
@@ -28,7 +45,8 @@ struct DeviceInner {
 
 struct Device {
     r#type: DeviceType,
-    inner: Mutex<DeviceInner>,
+    key: &'static Mutex<DeviceInner>,
+    encryption: &'static Mutex<DeviceInner>,
 }
 
 struct DeviceOperations;
@@ -38,8 +56,12 @@ impl file::Operations for DeviceOperations {
     type Data = Arc<Device>;
     type OpenData = Arc<Device>;
 
-    fn open(context: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
-        let mut device = (*context).inner.lock();
+    fn open(data: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
+        let mut device = match data.r#type {
+            DeviceType::KEY => data.key,
+            DeviceType::ENCRYPTION => data.encryption,
+        }
+        .lock();
 
         if device.is_in_use {
             return Err(code::EBUSY);
@@ -49,7 +71,7 @@ impl file::Operations for DeviceOperations {
         device.in_buffer.clear();
         device.out_buffer.clear();
 
-        Ok(context.clone())
+        Ok(data.clone())
     }
 
     fn read(
@@ -58,11 +80,14 @@ impl file::Operations for DeviceOperations {
         writer: &mut impl kernel::io_buffer::IoBufferWriter,
         offset: u64,
     ) -> Result<usize> {
-        let offset = usize::try_from(offset)?;
-
-        let device = data.inner.lock();
+        let device = match data.r#type {
+            DeviceType::KEY => data.key,
+            DeviceType::ENCRYPTION => data.encryption,
+        }
+        .lock();
         let buffer = &device.in_buffer;
 
+        let offset = usize::try_from(offset)?;
         let len = min(writer.len(), buffer.len().saturating_sub(offset));
         writer.write_slice(&buffer[offset..][..len])?;
 
@@ -77,7 +102,11 @@ impl file::Operations for DeviceOperations {
     ) -> Result<usize> {
         let recv_bytes = reader.read_all()?;
 
-        let mut device = data.inner.lock();
+        let mut device = match data.r#type {
+            DeviceType::KEY => data.key,
+            DeviceType::ENCRYPTION => data.encryption,
+        }
+        .lock();
         let buffer = &mut device.in_buffer;
 
         buffer.clear();
@@ -86,7 +115,7 @@ impl file::Operations for DeviceOperations {
         match (*data).r#type {
             DeviceType::KEY => {
                 pr_info!("Written into key device.");
-            },
+            }
             DeviceType::ENCRYPTION => {
                 pr_info!("Written into encryption device.");
             }
@@ -95,15 +124,15 @@ impl file::Operations for DeviceOperations {
         Ok(recv_bytes.len())
     }
 
-    fn release(data: Arc<Device>, _file: &file::File) {
-        let mut device = data.inner.lock();
+    fn release(data: Self::Data, _file: &file::File) {
+        let mut device = match data.r#type {
+            DeviceType::KEY => data.key,
+            DeviceType::ENCRYPTION => data.encryption,
+        }
+        .lock();
+
         (*device).is_in_use = false;
     }
-}
-
-struct DeviceDriver {
-    _key_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
-    _encrypt_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
 }
 
 impl kernel::Module for DeviceDriver {
@@ -112,20 +141,14 @@ impl kernel::Module for DeviceDriver {
 
         let key_dev = Arc::try_new(Device {
             r#type: DeviceType::KEY,
-            inner: Mutex::new(DeviceInner {
-                is_in_use: false,
-                in_buffer: Vec::new(),
-                out_buffer: Vec::new(),
-            }),
+            key: unsafe { &KEY_DEV },
+            encryption: unsafe { &ENCRYPTION_DEV },
         })?;
 
         let encryption_dev = Arc::try_new(Device {
             r#type: DeviceType::ENCRYPTION,
-            inner: Mutex::new(DeviceInner {
-                is_in_use: false,
-                in_buffer: Vec::new(),
-                out_buffer: Vec::new(),
-            }),
+            key: unsafe { &KEY_DEV },
+            encryption: unsafe { &ENCRYPTION_DEV },
         })?;
 
         Ok(DeviceDriver {
