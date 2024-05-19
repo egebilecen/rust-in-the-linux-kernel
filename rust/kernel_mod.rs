@@ -49,7 +49,7 @@ struct DeviceOperations;
 #[vtable]
 impl file::Operations for DeviceOperations {
     type Data = Arc<Device>;
-    type OpenData = Arc<Device>;
+    type OpenData = Self::Data;
 
     fn open(data: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
         let device = data.as_arc_borrow();
