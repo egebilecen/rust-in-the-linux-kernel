@@ -25,6 +25,15 @@ enum DeviceType {
     ENCRYPTION,
 }
 
+impl DeviceType {
+    fn as_str(&self) -> &str {
+        match self {
+            DeviceType::KEY => "Key",
+            DeviceType::ENCRYPTION => "Encryption",
+        }
+    }
+}
+
 struct DeviceInner {
     is_in_use: bool,
     in_buffer: Vec<u8>,
