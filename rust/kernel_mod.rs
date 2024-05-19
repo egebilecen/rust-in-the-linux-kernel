@@ -15,18 +15,6 @@ module! {
 
 const DEV_PREFIX: &str = "present80";
 
-static mut KEY_DEV: Mutex<DeviceInner> = Mutex::new(DeviceInner {
-    is_in_use: false,
-    in_buffer: Vec::new(),
-    out_buffer: Vec::new(),
-});
-
-static mut ENCRYPTION_DEV: Mutex<DeviceInner> = Mutex::new(DeviceInner {
-    is_in_use: false,
-    in_buffer: Vec::new(),
-    out_buffer: Vec::new(),
-});
-
 struct DeviceDriver {
     _key_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
     _encrypt_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
@@ -45,8 +33,15 @@ struct DeviceInner {
 
 struct Device {
     r#type: DeviceType,
-    key: &'static Mutex<DeviceInner>,
-    encryption: &'static Mutex<DeviceInner>,
+    key: Arc<Mutex<DeviceInner>>,
+    encryption: Arc<Mutex<DeviceInner>>,
+}
+
+fn get_device_inner<'a>(dev: &'a ArcBorrow<'a, Device>) -> &'a Arc<Mutex<DeviceInner>> {
+    match dev.r#type {
+        DeviceType::KEY => &dev.key,
+        DeviceType::ENCRYPTION => &dev.encryption,
+    }
 }
 
 struct DeviceOperations;
@@ -57,11 +52,8 @@ impl file::Operations for DeviceOperations {
     type OpenData = Arc<Device>;
 
     fn open(data: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
-        let mut device = match data.r#type {
-            DeviceType::KEY => data.key,
-            DeviceType::ENCRYPTION => data.encryption,
-        }
-        .lock();
+        let device = data.as_arc_borrow();
+        let mut device = (get_device_inner(&device)).lock();
 
         if device.is_in_use {
             return Err(code::EBUSY);
@@ -80,11 +72,7 @@ impl file::Operations for DeviceOperations {
         writer: &mut impl kernel::io_buffer::IoBufferWriter,
         offset: u64,
     ) -> Result<usize> {
-        let device = match data.r#type {
-            DeviceType::KEY => data.key,
-            DeviceType::ENCRYPTION => data.encryption,
-        }
-        .lock();
+        let device = (get_device_inner(&data)).lock();
         let buffer = &device.in_buffer;
 
         let offset = usize::try_from(offset)?;
@@ -102,11 +90,7 @@ impl file::Operations for DeviceOperations {
     ) -> Result<usize> {
         let recv_bytes = reader.read_all()?;
 
-        let mut device = match data.r#type {
-            DeviceType::KEY => data.key,
-            DeviceType::ENCRYPTION => data.encryption,
-        }
-        .lock();
+        let mut device = (get_device_inner(&data)).lock();
         let buffer = &mut device.in_buffer;
 
         buffer.clear();
@@ -125,13 +109,10 @@ impl file::Operations for DeviceOperations {
     }
 
     fn release(data: Self::Data, _file: &file::File) {
-        let mut device = match data.r#type {
-            DeviceType::KEY => data.key,
-            DeviceType::ENCRYPTION => data.encryption,
-        }
-        .lock();
+        let device = data.as_arc_borrow();
+        let mut device = (get_device_inner(&device)).lock();
 
-        (*device).is_in_use = false;
+        device.is_in_use = false;
     }
 }
 
@@ -139,16 +120,28 @@ impl kernel::Module for DeviceDriver {
     fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
         pr_info!("Initializing.\n");
 
+        let key_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
+            is_in_use: false,
+            in_buffer: Vec::new(),
+            out_buffer: Vec::new(),
+        }))?;
+
+        let encryption_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
+            is_in_use: false,
+            in_buffer: Vec::new(),
+            out_buffer: Vec::new(),
+        }))?;
+
         let key_dev = Arc::try_new(Device {
             r#type: DeviceType::KEY,
-            key: unsafe { &KEY_DEV },
-            encryption: unsafe { &ENCRYPTION_DEV },
+            key: key_dev_inner.clone(),
+            encryption: encryption_dev_inner.clone(),
         })?;
 
         let encryption_dev = Arc::try_new(Device {
             r#type: DeviceType::ENCRYPTION,
-            key: unsafe { &KEY_DEV },
-            encryption: unsafe { &ENCRYPTION_DEV },
+            key: key_dev_inner.clone(),
+            encryption: encryption_dev_inner.clone(),
         })?;
 
         Ok(DeviceDriver {
