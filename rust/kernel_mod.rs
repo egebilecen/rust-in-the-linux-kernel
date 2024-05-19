@@ -5,12 +5,19 @@ use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
 
+const DEV_PREFIX: &str = "present80";
+
 module! {
     type: DeviceDriver,
     name: "rust_misc_dev",
     author: "Ege Bilecen",
     description: "Miscellaneous device written in Rust.",
     license: "GPL",
+}
+
+enum DeviceType {
+    KEY,
+    ENCRYPTION,
 }
 
 struct DeviceInner {
@@ -20,6 +27,7 @@ struct DeviceInner {
 }
 
 struct Device {
+    r#type: DeviceType,
     inner: Mutex<DeviceInner>,
 }
 
@@ -75,6 +83,15 @@ impl file::Operations for DeviceOperations {
         buffer.clear();
         buffer.try_extend_from_slice(&recv_bytes[..])?;
 
+        match (*data).r#type {
+            DeviceType::KEY => {
+                pr_info!("Written into key device.");
+            },
+            DeviceType::ENCRYPTION => {
+                pr_info!("Written into encryption device.");
+            }
+        }
+
         Ok(recv_bytes.len())
     }
 
@@ -85,14 +102,25 @@ impl file::Operations for DeviceOperations {
 }
 
 struct DeviceDriver {
-    _dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
+    _key_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
+    _encrypt_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
 }
 
 impl kernel::Module for DeviceDriver {
     fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
         pr_info!("Initializing.\n");
 
-        let device = Arc::try_new(Device {
+        let key_dev = Arc::try_new(Device {
+            r#type: DeviceType::KEY,
+            inner: Mutex::new(DeviceInner {
+                is_in_use: false,
+                in_buffer: Vec::new(),
+                out_buffer: Vec::new(),
+            }),
+        })?;
+
+        let encryption_dev = Arc::try_new(Device {
+            r#type: DeviceType::ENCRYPTION,
             inner: Mutex::new(DeviceInner {
                 is_in_use: false,
                 in_buffer: Vec::new(),
@@ -101,7 +129,11 @@ impl kernel::Module for DeviceDriver {
         })?;
 
         Ok(DeviceDriver {
-            _dev: miscdev::Registration::new_pinned(fmt!("ee580"), device)?,
+            _key_dev: miscdev::Registration::new_pinned(fmt!("{}_key", DEV_PREFIX), key_dev)?,
+            _encrypt_dev: miscdev::Registration::new_pinned(
+                fmt!("{}_encrypt", DEV_PREFIX),
+                encryption_dev,
+            )?,
         })
     }
 }
