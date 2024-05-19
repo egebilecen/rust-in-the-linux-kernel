@@ -61,6 +61,8 @@ impl file::Operations for DeviceOperations {
     type OpenData = Self::Data;
 
     fn open(data: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
+        pr_info!("{} device is opened.", &data.r#type.as_str());
+
         let device = data.as_arc_borrow();
         let mut device = (get_device_inner(&device)).lock();
 
@@ -105,12 +107,12 @@ impl file::Operations for DeviceOperations {
         buffer.clear();
         buffer.try_extend_from_slice(&recv_bytes[..])?;
 
-        match (*data).r#type {
+        match data.r#type {
             DeviceType::KEY => {
-                pr_info!("Written into key device.");
+                pr_info!("Written into the key device.");
             }
             DeviceType::ENCRYPTION => {
-                pr_info!("Written into encryption device.");
+                pr_info!("Written into the encryption device.");
             }
         }
 
@@ -127,7 +129,7 @@ impl file::Operations for DeviceOperations {
 
 impl kernel::Module for DeviceDriver {
     fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
-        pr_info!("Initializing.\n");
+        pr_info!("Initializing...\n");
 
         let key_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
@@ -165,6 +167,6 @@ impl kernel::Module for DeviceDriver {
 
 impl Drop for DeviceDriver {
     fn drop(&mut self) {
-        pr_info!("Exit.\n");
+        pr_info!("Exiting...\n");
     }
 }
