@@ -24,15 +24,15 @@ struct DeviceDriver {
 }
 
 enum DeviceType {
-    KEY,
-    ENCRYPTION,
+    Key,
+    Encryption,
 }
 
 impl DeviceType {
     fn as_str(&self) -> &str {
         match self {
-            DeviceType::KEY => "Key",
-            DeviceType::ENCRYPTION => "Encryption",
+            DeviceType::Key => "Key",
+            DeviceType::Encryption => "Encryption",
         }
     }
 }
@@ -51,8 +51,8 @@ struct Device {
 
 fn get_device_inner<'a>(dev: &'a ArcBorrow<'a, Device>) -> &'a Arc<Mutex<DeviceInner>> {
     match dev.r#type {
-        DeviceType::KEY => &dev.key,
-        DeviceType::ENCRYPTION => &dev.encryption,
+        DeviceType::Key => &dev.key,
+        DeviceType::Encryption => &dev.encryption,
     }
 }
 
@@ -111,10 +111,10 @@ impl file::Operations for DeviceOperations {
         buffer.try_extend_from_slice(&recv_bytes[..])?;
 
         match data.r#type {
-            DeviceType::KEY => {
+            DeviceType::Key => {
                 pr_info!("Written into the key device.");
             }
-            DeviceType::ENCRYPTION => {
+            DeviceType::Encryption => {
                 pr_info!("Written into the encryption device.");
             }
         }
@@ -164,13 +164,13 @@ impl kernel::Module for DeviceDriver {
         }))?;
 
         let key_dev = Arc::try_new(Device {
-            r#type: DeviceType::KEY,
+            r#type: DeviceType::Key,
             key: key_dev_inner.clone(),
             encryption: encryption_dev_inner.clone(),
         })?;
 
         let encryption_dev = Arc::try_new(Device {
-            r#type: DeviceType::ENCRYPTION,
+            r#type: DeviceType::Encryption,
             key: key_dev_inner.clone(),
             encryption: encryption_dev_inner.clone(),
         })?;
