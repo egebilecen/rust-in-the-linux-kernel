@@ -16,6 +16,13 @@ impl ByteVec {
 
     pub(crate) fn print(&self) {
         pr_info!("Bytes:\n");
+
+        if self.vec.is_empty() {
+            pr_info!("<empty>");
+            pr_info!("");
+            return;
+        }
+
         pr_info!("");
 
         for (i, b) in self.vec.iter().enumerate() {
@@ -31,6 +38,13 @@ impl ByteVec {
 
     pub(crate) fn print_block(&self, width: usize) {
         pr_info!("Bytes:\n");
+
+        if self.vec.is_empty() {
+            pr_info!("<empty>");
+            pr_info!("");
+            return;
+        }
+
         pr_info!("| ");
 
         for (i, b) in self.vec.iter().enumerate() {
