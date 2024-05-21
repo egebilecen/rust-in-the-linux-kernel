@@ -1,2 +1,3 @@
 #!/bin/bash
-rmmod kernel_mod.ko && insmod kernel_mod.ko && dmesg
+rmmod kernel_mod.ko
+insmod kernel_mod.ko && dmesg
