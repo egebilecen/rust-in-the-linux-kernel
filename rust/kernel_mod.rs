@@ -4,6 +4,9 @@ use kernel::error::code;
 use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
+use present80::key::Key;
+
+mod present80;
 
 module! {
     type: DeviceDriver,
@@ -130,6 +133,23 @@ impl file::Operations for DeviceOperations {
 impl kernel::Module for DeviceDriver {
     fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
         pr_info!("Initializing...\n");
+
+        let mut bytes = Vec::new();
+        bytes.try_push(0xDE)?;
+        bytes.try_push(0xAD)?;
+        bytes.try_push(0xC0)?;
+        bytes.try_push(0xDE)?;
+        bytes.try_push(0xC0)?;
+        bytes.try_push(0xFF)?;
+        bytes.try_push(0xA9)?;
+        bytes.try_push(0x81)?;
+        bytes.try_push(0x99)?;
+        bytes.try_push(0x1B)?;
+        bytes.try_push(0xEE)?;
+        bytes.try_push(0x71)?;
+
+        let key = Key::from(bytes);
+        key.bytes.print_block(4);
 
         let key_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
