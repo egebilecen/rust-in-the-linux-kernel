@@ -1,2 +1,2 @@
 #!/bin/bash
-make KDIR=~/linux LLVM=1 && modinfo kernel_mod.ko
+make KDIR=~/linux LLVM=1 CLIPPY=1 && modinfo kernel_mod.ko
