@@ -13,6 +13,15 @@ impl Key {
     }
 }
 
+impl From<&Key> for u64 {
+    fn from(value: &Key) -> Self {
+        let mut bytes: [u8; 8] = [0; 8];
+        bytes.clone_from_slice(&value.bytes.as_slice()[..8]);
+
+        u64::from_be_bytes(bytes)
+    }
+}
+
 impl From<&Key> for u128 {
     fn from(value: &Key) -> Self {
         let mut bytes: [u8; 16] = [0; 16];
