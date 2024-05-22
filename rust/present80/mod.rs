@@ -68,7 +68,22 @@ impl Present80 {
     }
 
     fn permutation_layer(&self, state: u64) -> u64 {
-        todo!()
+        let mut permutated_state: u64 = 0x00;
+
+        for i in 0..8 {
+            let shift = i * 8;
+            let byte = (state & (0xFF << shift)) >> shift;
+
+            for j in 0..8 {
+                let pos = (i * 8) + j;
+                let bit = if (byte & (0x01 << j)) == 1 { 1 } else { 0 };
+                let new_pos = PERMUTATION_BOX[pos];
+
+                permutated_state |= bit << new_pos;
+            }
+        }
+
+        permutated_state
     }
 
     pub(crate) fn encrypt(&self, bytes: &[u8; 64]) -> Result<&[u8; 64]> {
