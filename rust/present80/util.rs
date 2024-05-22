@@ -60,16 +60,22 @@ pub(crate) fn print_block(bytes: &[u8], width: usize) {
     for (i, b) in bytes.iter().enumerate() {
         pr_cont!("{:02X}", b);
 
-        if (i + 1) % width != 0 {
+        if (i + 1) % width != 0 && i != bytes.len() - 1 {
             pr_cont!(" ");
         } else if i != bytes.len() - 1 {
             pr_cont!(" |");
             pr_info!("| ");
         }
+    }
 
-        if i == bytes.len() - 1 {
-            pr_cont!(" |");
+    if bytes.len() % width != 0 {
+        for _ in 0..(width - (bytes.len() % width)) {
+            pr_cont!(" --");
         }
+
+        pr_cont!(" |");
+    } else {
+        pr_cont!(" |");
     }
 
     pr_info!("");
