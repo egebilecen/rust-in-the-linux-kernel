@@ -6,6 +6,8 @@ use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
 use present80::key::Key;
 
+use crate::present80::Present80;
+
 mod present80;
 
 module! {
@@ -136,6 +138,8 @@ impl kernel::Module for DeviceDriver {
 
         let key = Key::new()?;
         key.bytes.print_block(8);
+
+        let cipher = Present80::new(key);
 
         let key_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
