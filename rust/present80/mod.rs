@@ -1,6 +1,5 @@
 use crate::present80::key::Key;
 use crate::present80::math::rotate_right;
-use core::todo;
 use kernel::prelude::*;
 
 pub(crate) mod key;
@@ -86,7 +85,19 @@ impl Present80 {
         permutated_state
     }
 
-    pub(crate) fn encrypt(&self, bytes: &[u8; 64]) -> Result<&[u8; 64]> {
-        todo!()
+    pub(crate) fn encrypt(&self, bytes: [u8; 8]) -> [u8; 8] {
+        let mut state = u64::from_be_bytes(bytes);
+        let round_keys = self.generate_round_keys();
+
+        for i in 1..=TOTAL_ROUNDS {
+            state = self.add_round_key(state, round_keys[i - 1]);
+
+            if i != TOTAL_ROUNDS {
+                state = self.substitution_layer(state);
+                state = self.permutation_layer(state);
+            }
+        }
+
+        state.to_be_bytes()
     }
 }
