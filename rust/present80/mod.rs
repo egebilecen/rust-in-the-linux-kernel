@@ -1,10 +1,13 @@
 use crate::present80::key::Key;
+use crate::present80::math::rotate_right;
 use core::todo;
 use kernel::prelude::*;
 
 pub(crate) mod key;
 pub(crate) mod math;
 pub(crate) mod util;
+
+const TOTAL_ROUNDS: usize = 32;
 
 const SUBSTITUTION_BOX: &[u8] = &[
     0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD, 0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2,
@@ -18,16 +21,31 @@ const PERMUTATION_BOX: &[u8] = &[
 
 pub(crate) struct Present80 {
     pub(crate) key: Key,
-    rounds: usize,
 }
 
 impl Present80 {
     pub(crate) fn new(key: Key) -> Self {
-        Self { key, rounds: 32 }
+        Self { key }
     }
 
-    fn generate_round_keys(&self) -> Result<Vec<u64>> {
-        todo!()
+    fn generate_round_keys(&self) -> [u64; TOTAL_ROUNDS] {
+        let mut round_keys: [u64; TOTAL_ROUNDS] = [0; TOTAL_ROUNDS];
+        let mut key_reg = u128::from(&self.key);
+
+        for i in 1..=TOTAL_ROUNDS {
+            let round_key = (key_reg >> 16) as u64;
+            round_keys[i - 1] = round_key;
+
+            key_reg = rotate_right(key_reg, 19, 80);
+
+            // TODO: Optimize the shifts by using constant hex value.
+            key_reg = (key_reg & !(0x0F << 76))
+                | ((SUBSTITUTION_BOX[(key_reg >> 76) as usize] as u128) << 76);
+
+            key_reg ^= 1 << 15;
+        }
+
+        round_keys
     }
 
     #[inline]
@@ -43,7 +61,7 @@ impl Present80 {
         todo!()
     }
 
-    pub(crate) fn encrypt(&self, bytes: &Vec<u8>) -> Result<Vec<u8>> {
+    pub(crate) fn encrypt(&self, bytes: &[u8; 64]) -> Result<&[u8; 64]> {
         todo!()
     }
 }
