@@ -54,7 +54,17 @@ impl Present80 {
     }
 
     fn substitution_layer(&self, state: u64) -> u64 {
-        todo!()
+        let mut substituted_state: u64 = 0x00;
+
+        for i in 0..16 {
+            let shift = i * 4;
+            let mask = 0x0F << shift;
+            let nibble = (state & mask) >> shift;
+
+            substituted_state |= (SUBSTITUTION_BOX[nibble as usize] << shift) as u64;
+        }
+
+        substituted_state
     }
 
     fn permutation_layer(&self, state: u64) -> u64 {
