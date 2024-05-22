@@ -1,11 +1,10 @@
-use crate::present80::byte_vec::ByteVec;
 use crate::present80::key::Key;
 use core::todo;
 use kernel::prelude::*;
 
-pub(crate) mod byte_vec;
 pub(crate) mod key;
 pub(crate) mod math;
+pub(crate) mod util;
 
 const SUBSTITUTION_BOX: &[u8] = &[
     0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD, 0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2,

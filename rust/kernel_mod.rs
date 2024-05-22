@@ -5,6 +5,7 @@ use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
 use present80::key::Key;
+use present80::util::*;
 
 use crate::present80::Present80;
 
@@ -137,7 +138,7 @@ impl kernel::Module for DeviceDriver {
         pr_info!("Initializing...\n");
 
         let key = Key::new()?;
-        key.bytes.print_block(8);
+        print_block(&key.bytes, 8);
 
         let cipher = Present80::new(key);
 

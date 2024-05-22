@@ -1,9 +1,8 @@
-use crate::present80::byte_vec::ByteVec;
 use kernel::prelude::*;
 use kernel::random::getrandom;
 
 pub(crate) struct Key {
-    pub(crate) bytes: ByteVec,
+    pub(crate) bytes: Vec<u8>,
 }
 
 impl Key {
@@ -15,7 +14,7 @@ impl Key {
         bytes_vec.try_extend_from_slice(&rand_bytes)?;
 
         Ok(Self {
-            bytes: ByteVec::new(bytes_vec),
+            bytes: bytes_vec,
         })
     }
 }
@@ -23,7 +22,7 @@ impl Key {
 impl From<Vec<u8>> for Key {
     fn from(value: Vec<u8>) -> Self {
         Self {
-            bytes: ByteVec::new(value),
+            bytes: value,
         }
     }
 }
