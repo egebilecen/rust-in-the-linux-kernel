@@ -26,24 +26,24 @@ impl Present80 {
         Self { key, rounds: 32 }
     }
 
-    fn generate_round_keys(&self) -> Result<Vec<u8>> {
+    fn generate_round_keys(&self) -> Result<Vec<u64>> {
         todo!()
     }
 
     #[inline]
-    fn add_round_key(&self, state: u8, key: u8) -> u8 {
+    fn add_round_key(&self, state: u64, key: u64) -> u64 {
         state ^ key
     }
 
-    fn substitution_layer(&self, state: u8) -> u8 {
+    fn substitution_layer(&self, state: u64) -> u64 {
         todo!()
     }
 
-    fn permutation_layer(&self, state: u8) -> u8 {
+    fn permutation_layer(&self, state: u64) -> u64 {
         todo!()
     }
 
-    pub(crate) fn encrypt(&self, bytes: Vec<u8>) -> Vec<u8> {
+    pub(crate) fn encrypt(&self, bytes: &Vec<u8>) -> Result<Vec<u8>> {
         todo!()
     }
 }
