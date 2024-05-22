@@ -1,8 +1,31 @@
+use kernel::error::code;
 use kernel::pr_cont;
 use kernel::prelude::*;
+use kernel::random::getrandom;
 
-pub(crate) fn print(bytes: &Vec<u8>) {
-    pr_info!("Bytes:\n");
+pub(crate) fn rand_bytes(size: usize) -> Result<Vec<u8>> {
+    const MAX_SIZE: usize = 128;
+
+    if size > MAX_SIZE {
+        pr_err!(
+            "rand_bytes() - Argument `size` ({}) cannot be bigger than `MAX_SIZE` ({})",
+            size,
+            MAX_SIZE
+        );
+        return Err(code::EINVAL);
+    }
+
+    let mut rand_bytes: [u8; MAX_SIZE] = [0; MAX_SIZE];
+    getrandom(&mut rand_bytes[..size])?;
+
+    let mut bytes = Vec::new();
+    bytes.try_extend_from_slice(&rand_bytes[..size])?;
+
+    Ok(bytes)
+}
+
+pub(crate) fn print(bytes: &[u8]) {
+    pr_info!("Bytes ({})\n", bytes.len());
 
     if bytes.is_empty() {
         pr_info!("<empty>");
@@ -23,8 +46,8 @@ pub(crate) fn print(bytes: &Vec<u8>) {
     pr_info!("");
 }
 
-pub(crate) fn print_block(bytes: &Vec<u8>, width: usize) {
-    pr_info!("Bytes:\n");
+pub(crate) fn print_block(bytes: &[u8], width: usize) {
+    pr_info!("Bytes ({})\n", bytes.len());
 
     if bytes.is_empty() {
         pr_info!("<empty>");
