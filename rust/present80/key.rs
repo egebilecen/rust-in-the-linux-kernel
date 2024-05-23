@@ -13,12 +13,14 @@ impl Key {
     }
 }
 
-impl From<&Key> for u64 {
-    fn from(value: &Key) -> Self {
-        let mut bytes: [u8; 8] = [0; 8];
-        bytes.clone_from_slice(&value.bytes.as_slice()[..8]);
+impl TryFrom<[u8; 10]> for Key {
+    type Error = Error;
 
-        u64::from_be_bytes(bytes)
+    fn try_from(value: [u8; 10]) -> Result<Self> {
+        let mut bytes = Vec::new();
+        bytes.try_extend_from_slice(&value)?;
+
+        Ok(Self { bytes })
     }
 }
 
