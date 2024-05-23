@@ -9,10 +9,15 @@ fn bit_ones(size: u128) -> u128 {
 }
 
 pub(crate) fn rotate_right(num: u128, bits: u128, width: u128) -> u128 {
-    let bits = if bits > width { bits % width } else { bits };
+    const MAX_WIDTH: u128 = 128;
 
-    let preserved_bits = num & bit_ones(bits);
-    let bits_to_shift = num & (bit_ones(width - bits) << bits);
+    let width = if width > MAX_WIDTH { MAX_WIDTH } else { width };
 
-    (bits_to_shift >> bits) | (preserved_bits << (width - bits))
+    let bits = if bits > MAX_WIDTH {
+        bits % MAX_WIDTH
+    } else {
+        bits
+    };
+
+    ((num & bit_ones(bits)) << (width - bits)) | (num >> bits)
 }
