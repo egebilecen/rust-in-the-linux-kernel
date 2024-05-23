@@ -27,7 +27,10 @@ impl TryFrom<[u8; 10]> for Key {
 impl From<&Key> for u128 {
     fn from(value: &Key) -> Self {
         let mut bytes: [u8; 16] = [0; 16];
-        bytes.clone_from_slice(&value.bytes.as_slice()[..16]);
+
+        for (i, &byte) in value.bytes.iter().enumerate() {
+            bytes[(bytes.len() - 1) - i] = byte;
+        }
 
         u128::from_be_bytes(bytes)
     }
