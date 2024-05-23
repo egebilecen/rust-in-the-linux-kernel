@@ -75,7 +75,7 @@ impl Present80 {
 
             for j in 0..8 {
                 let pos = (i * 8) + j;
-                let bit = if (byte & (0x01 << j)) == 1 { 1 } else { 0 };
+                let bit = if (byte & (0x01 << j)) != 0 { 1 } else { 0 };
                 let new_pos = PERMUTATION_BOX[pos];
 
                 permutated_state |= bit << new_pos;
