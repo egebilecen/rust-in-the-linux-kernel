@@ -1,5 +1,5 @@
 use crate::present80::key::Key;
-use crate::present80::math::rotate_right;
+use crate::present80::math::{bit_ones, rotate_right};
 use kernel::prelude::*;
 
 pub(crate) mod key;
@@ -27,7 +27,7 @@ impl Present80 {
         Self { key }
     }
 
-    fn generate_round_keys(&self) -> [u64; TOTAL_ROUNDS] {
+    fn generate_round_keys(&self) -> Result<[u64; TOTAL_ROUNDS]> {
         let mut round_keys: [u64; TOTAL_ROUNDS] = [0; TOTAL_ROUNDS];
         let mut key_reg = u128::from(&self.key);
 
@@ -41,10 +41,10 @@ impl Present80 {
             key_reg = (key_reg & !(0x0F << 76))
                 | ((SUBSTITUTION_BOX[(key_reg >> 76) as usize] as u128) << 76);
 
-            key_reg ^= 1 << 15;
+            key_reg = (key_reg ^ (u128::try_from(i)? << 15)) & bit_ones(80);
         }
 
-        round_keys
+        Ok(round_keys)
     }
 
     #[inline]
@@ -85,9 +85,9 @@ impl Present80 {
         permutated_state
     }
 
-    pub(crate) fn encrypt(&self, bytes: [u8; 8]) -> [u8; 8] {
+    pub(crate) fn encrypt(&self, bytes: [u8; 8]) -> Result<[u8; 8]> {
         let mut state = u64::from_be_bytes(bytes);
-        let round_keys = self.generate_round_keys();
+        let round_keys = self.generate_round_keys()?;
 
         for i in 1..=TOTAL_ROUNDS {
             state = self.add_round_key(state, round_keys[i - 1]);
@@ -98,6 +98,6 @@ impl Present80 {
             }
         }
 
-        state.to_be_bytes()
+        Ok(state.to_be_bytes())
     }
 }
