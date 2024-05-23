@@ -24,6 +24,7 @@ pub(crate) fn rand_bytes(size: usize) -> Result<Vec<u8>> {
     Ok(bytes)
 }
 
+#[allow(dead_code)]
 pub(crate) fn print(bytes: &[u8]) {
     pr_info!("Bytes ({})\n", bytes.len());
 
@@ -46,6 +47,7 @@ pub(crate) fn print(bytes: &[u8]) {
     pr_info!("");
 }
 
+#[allow(dead_code)]
 pub(crate) fn print_block(bytes: &[u8], width: usize) {
     pr_info!("Bytes ({})\n", bytes.len());
 

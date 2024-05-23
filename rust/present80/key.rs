@@ -6,6 +6,7 @@ pub(crate) struct Key {
 }
 
 impl Key {
+    #[allow(dead_code)]
     pub(crate) fn new() -> Result<Self> {
         Ok(Self {
             bytes: rand_bytes(10)?,
