@@ -1,2 +1,0 @@
-#!/bin/bash
-make KDIR=~/linux LLVM=1 && modinfo kernel_mod.ko

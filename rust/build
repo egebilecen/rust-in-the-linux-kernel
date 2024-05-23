@@ -1,2 +1,9 @@
 #!/bin/bash
-make KDIR=~/linux LLVM=1 CLIPPY=1 && modinfo kernel_mod.ko
+if [ "$1" = "no-clippy" ] 
+then
+    USE_CLIPPY=0
+else
+    USE_CLIPPY=1
+fi
+
+make KDIR=~/linux LLVM=1 CLIPPY=$USE_CLIPPY && modinfo kernel_mod.ko
