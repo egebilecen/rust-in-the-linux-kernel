@@ -1,4 +1,4 @@
-fn bit_ones(size: u128) -> u128 {
+pub(crate) fn bit_ones(size: u128) -> u128 {
     let mut num = 0x00;
 
     for i in 0..size {
