@@ -60,7 +60,7 @@ impl Present80 {
             let mask = 0x0F << shift;
             let nibble = (state & mask) >> shift;
 
-            substituted_state |= (SUBSTITUTION_BOX[nibble as usize] << shift) as u64;
+            substituted_state |= ((SUBSTITUTION_BOX[nibble as usize] as u64) << shift);
         }
 
         substituted_state
