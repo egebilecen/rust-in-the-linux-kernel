@@ -1,8 +1,8 @@
 fn bit_ones(size: u128) -> u128 {
     let mut num = 0x00;
 
-    for _ in 0..size {
-        num |= 1 << size;
+    for i in 0..size {
+        num |= 1 << i;
     }
 
     num
