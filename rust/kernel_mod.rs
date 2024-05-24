@@ -137,15 +137,6 @@ impl kernel::Module for DeviceDriver {
     fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
         pr_info!("Initializing...\n");
 
-        let key = Key::try_from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])?;
-        print_block(&key.bytes, 8);
-
-        let cipher = Present80::new(key);
-        print_block(
-            &cipher.encrypt([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])?,
-            8,
-        );
-
         let key_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
             in_buffer: Vec::new(),
