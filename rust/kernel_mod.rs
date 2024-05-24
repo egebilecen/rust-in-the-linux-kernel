@@ -103,24 +103,27 @@ impl file::Operations for DeviceOperations {
         data: ArcBorrow<'_, Device>,
         _file: &file::File,
         reader: &mut impl kernel::io_buffer::IoBufferReader,
-        _offset: u64,
+        offset: u64,
     ) -> Result<usize> {
         let recv_bytes = reader.read_all()?;
 
         let mut device = (get_device_inner(&data)).lock();
         let buffer = &mut device.in_buffer;
 
-        buffer.clear();
+        if offset == 0 {
+            buffer.clear();
+        }
+
         buffer.try_extend_from_slice(&recv_bytes[..])?;
 
-        match data.r#type {
-            DeviceType::Key => {
-                pr_info!("Written into the key device.");
-            }
-            DeviceType::Encryption => {
-                pr_info!("Written into the encryption device.");
-            }
-        }
+        // match data.r#type {
+        //     DeviceType::Key => {
+        //         pr_info!("Written into the key device.");
+        //     }
+        //     DeviceType::Encryption => {
+        //         pr_info!("Written into the encryption device.");
+        //     }
+        // }
 
         Ok(recv_bytes.len())
     }
