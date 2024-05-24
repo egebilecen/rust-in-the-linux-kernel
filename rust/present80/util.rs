@@ -3,6 +3,7 @@ use kernel::pr_cont;
 use kernel::prelude::*;
 use kernel::random::getrandom;
 
+#[allow(dead_code)]
 pub(crate) fn rand_bytes(size: usize) -> Result<Vec<u8>> {
     const MAX_SIZE: usize = 128;
 

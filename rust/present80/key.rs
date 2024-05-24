@@ -1,4 +1,3 @@
-use crate::rand_bytes;
 use kernel::error::code;
 use kernel::prelude::*;
 

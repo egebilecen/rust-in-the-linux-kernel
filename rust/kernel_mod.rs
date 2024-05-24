@@ -5,7 +5,6 @@ use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
 use present80::key::Key;
-use present80::util::*;
 
 use crate::present80::Present80;
 
@@ -123,8 +122,8 @@ impl file::Operations for DeviceOperations {
         offset: u64,
     ) -> Result<usize> {
         let recv_bytes = reader.read_all()?;
-
         let mut device = (get_device_inner(&data)).lock();
+
         let in_buffer = &mut device.in_buffer;
 
         if offset == 0 {
