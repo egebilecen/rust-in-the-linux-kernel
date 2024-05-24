@@ -37,7 +37,6 @@ impl Present80 {
 
             key_reg = rotate_right(key_reg, 19, 80);
 
-            // TODO: Optimize the shifts by using constant hex value.
             key_reg = (key_reg & !(0x0F << 76))
                 | ((SUBSTITUTION_BOX[(key_reg >> 76) as usize] as u128) << 76);
 

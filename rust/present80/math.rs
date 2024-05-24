@@ -13,8 +13,8 @@ pub(crate) fn rotate_right(num: u128, bits: u128, width: u128) -> u128 {
 
     let width = if width > MAX_WIDTH { MAX_WIDTH } else { width };
 
-    let bits = if bits > MAX_WIDTH {
-        bits % MAX_WIDTH
+    let bits = if bits > width {
+        bits % width
     } else {
         bits
     };
