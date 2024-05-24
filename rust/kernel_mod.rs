@@ -89,8 +89,14 @@ impl file::Operations for DeviceOperations {
         writer: &mut impl kernel::io_buffer::IoBufferWriter,
         offset: u64,
     ) -> Result<usize> {
+        // Key device doesn't support read operation.
+        if let DeviceType::Key = data.r#type {
+            pr_warn!("Key device doesn't support read operation.");
+            return Err(code::EPERM);
+        }
+
         let device = (get_device_inner(&data)).lock();
-        let buffer = &device.in_buffer;
+        let buffer = &device.out_buffer;
 
         let offset = usize::try_from(offset)?;
         let len = min(writer.len(), buffer.len().saturating_sub(offset));
