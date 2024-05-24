@@ -1,5 +1,6 @@
 use crate::present80::key::Key;
 use crate::present80::math::{bit_ones, rotate_right};
+use kernel::error::code;
 use kernel::prelude::*;
 
 pub(crate) mod key;
@@ -18,12 +19,12 @@ const PERMUTATION_BOX: &[u8] = &[
     28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63,
 ];
 
-pub(crate) struct Present80 {
-    pub(crate) key: Key,
+pub(crate) struct Present80<'a> {
+    pub(crate) key: Key<'a>,
 }
 
-impl Present80 {
-    pub(crate) fn new(key: Key) -> Self {
+impl<'a> Present80<'a> {
+    pub(crate) fn new(key: Key<'a>) -> Self {
         Self { key }
     }
 
@@ -84,8 +85,19 @@ impl Present80 {
         permutated_state
     }
 
-    pub(crate) fn encrypt(&self, bytes: [u8; 8]) -> Result<[u8; 8]> {
-        let mut state = u64::from_be_bytes(bytes);
+    pub(crate) fn encrypt(&self, bytes: &[u8]) -> Result<[u8; 8]> {
+        if bytes.len() != 8 {
+            pr_err!(
+                "Given bits doesn't match with block size of 64 bits! Len: {}",
+                bytes.len() * 8
+            );
+            return Err(code::EINVAL);
+        }
+
+        let mut fixed_bytes: [u8; 8] = [0; 8];
+        fixed_bytes.copy_from_slice(&bytes[..8]);
+
+        let mut state = u64::from_be_bytes(fixed_bytes);
         let round_keys = self.generate_round_keys()?;
 
         for i in 1..=TOTAL_ROUNDS {

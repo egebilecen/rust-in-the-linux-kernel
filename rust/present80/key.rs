@@ -1,32 +1,29 @@
 use crate::rand_bytes;
+use kernel::error::code;
 use kernel::prelude::*;
 
-pub(crate) struct Key {
-    pub(crate) bytes: Vec<u8>,
+pub(crate) struct Key<'a> {
+    pub(crate) bytes: &'a [u8],
 }
 
-impl Key {
-    #[allow(dead_code)]
-    pub(crate) fn new() -> Result<Self> {
-        Ok(Self {
-            bytes: rand_bytes(10)?,
-        })
-    }
-}
-
-impl TryFrom<[u8; 10]> for Key {
+impl<'a> TryFrom<&'a [u8]> for Key<'a> {
     type Error = Error;
 
-    fn try_from(value: [u8; 10]) -> Result<Self> {
-        let mut bytes = Vec::new();
-        bytes.try_extend_from_slice(&value)?;
+    fn try_from(value: &'a [u8]) -> Result<Self> {
+        if value.len() != 10 {
+            pr_err!(
+                "Supplied PRESENT-80 key is not 80 bits! Len: {} bits.",
+                value.len() * 8
+            );
+            return Err(code::EINVAL);
+        }
 
-        Ok(Self { bytes })
+        Ok(Self { bytes: value })
     }
 }
 
-impl From<&Key> for u128 {
-    fn from(value: &Key) -> Self {
+impl From<&Key<'_>> for u128 {
+    fn from(value: &Key<'_>) -> Self {
         let mut bytes: [u8; 16] = [0; 16];
 
         for (i, &byte) in value.bytes.iter().enumerate() {
