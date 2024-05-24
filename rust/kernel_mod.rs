@@ -43,7 +43,6 @@ impl DeviceType {
 struct DeviceInner {
     is_in_use: bool,
     in_buffer: Vec<u8>,
-    out_buffer: Vec<u8>,
 }
 
 struct Device {
@@ -78,7 +77,6 @@ impl file::Operations for DeviceOperations {
 
         device.is_in_use = true;
         device.in_buffer.clear();
-        device.out_buffer.clear();
 
         Ok(data.clone())
     }
@@ -102,13 +100,9 @@ impl file::Operations for DeviceOperations {
         let cipher = Present80::new(key);
         let cipher_text = cipher.encrypt(device.in_buffer.as_slice())?;
 
-        let mut out_buffer = &mut device.out_buffer;
-        out_buffer.clear();
-        out_buffer.try_extend_from_slice(&cipher_text)?;
-
         let offset = usize::try_from(offset)?;
-        let len = min(writer.len(), out_buffer.len().saturating_sub(offset));
-        writer.write_slice(&out_buffer[offset..][..len])?;
+        let len = min(writer.len(), cipher_text.len().saturating_sub(offset));
+        writer.write_slice(&cipher_text[offset..][..len])?;
 
         Ok(len)
     }
@@ -148,13 +142,11 @@ impl kernel::Module for DeviceDriver {
         let key_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
             in_buffer: Vec::new(),
-            out_buffer: Vec::new(),
         }))?;
 
         let encryption_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
             in_buffer: Vec::new(),
-            out_buffer: Vec::new(),
         }))?;
 
         let key_dev = Arc::try_new(Device {
