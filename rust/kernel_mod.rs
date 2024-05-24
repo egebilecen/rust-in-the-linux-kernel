@@ -95,12 +95,20 @@ impl file::Operations for DeviceOperations {
             return Err(code::EPERM);
         }
 
-        let device = (get_device_inner(&data)).lock();
-        let buffer = &device.out_buffer;
+        let mut device = data.encryption.lock();
+        let key_device = data.key.lock();
+
+        let key = Key::try_from(key_device.in_buffer.as_slice())?;
+        let cipher = Present80::new(key);
+        let cipher_text = cipher.encrypt(device.in_buffer.as_slice())?;
+
+        let mut out_buffer = &mut device.out_buffer;
+        out_buffer.clear();
+        out_buffer.try_extend_from_slice(&cipher_text)?;
 
         let offset = usize::try_from(offset)?;
-        let len = min(writer.len(), buffer.len().saturating_sub(offset));
-        writer.write_slice(&buffer[offset..][..len])?;
+        let len = min(writer.len(), out_buffer.len().saturating_sub(offset));
+        writer.write_slice(&out_buffer[offset..][..len])?;
 
         Ok(len)
     }
@@ -114,22 +122,13 @@ impl file::Operations for DeviceOperations {
         let recv_bytes = reader.read_all()?;
 
         let mut device = (get_device_inner(&data)).lock();
-        let buffer = &mut device.in_buffer;
+        let in_buffer = &mut device.in_buffer;
 
         if offset == 0 {
-            buffer.clear();
+            in_buffer.clear();
         }
 
-        buffer.try_extend_from_slice(&recv_bytes[..])?;
-
-        // match data.r#type {
-        //     DeviceType::Key => {
-        //         pr_info!("Written into the key device.");
-        //     }
-        //     DeviceType::Encryption => {
-        //         pr_info!("Written into the encryption device.");
-        //     }
-        // }
+        in_buffer.try_extend_from_slice(&recv_bytes[..])?;
 
         Ok(recv_bytes.len())
     }
