@@ -98,13 +98,16 @@ impl file::Operations for DeviceOperations {
         let mut device = data.encryption.lock();
         let key_device = data.key.lock();
 
-        let key = Key::try_from(key_device.in_buffer.as_slice())?;
-        let cipher = Present80::new(key);
-        let cipher_text = cipher.encrypt(device.in_buffer.as_slice())?;
+        if device.out_buffer.is_empty() {
+            let key = Key::try_from(key_device.in_buffer.as_slice())?;
+            let cipher = Present80::new(key);
+            let cipher_text = cipher.encrypt(device.in_buffer.as_slice())?;
 
-        let mut out_buffer = &mut device.out_buffer;
-        out_buffer.clear();
-        out_buffer.try_extend_from_slice(&cipher_text)?;
+            let out_buffer = &mut device.out_buffer;
+            out_buffer.try_extend_from_slice(&cipher_text)?;
+        }
+
+        let out_buffer = &device.out_buffer;
 
         let offset = usize::try_from(offset)?;
         let len = min(writer.len(), out_buffer.len().saturating_sub(offset));
@@ -129,6 +132,13 @@ impl file::Operations for DeviceOperations {
         }
 
         in_buffer.try_extend_from_slice(&recv_bytes[..])?;
+
+        if offset == 0 {
+            if let DeviceType::Encryption = data.r#type {
+                let out_buffer = &mut device.out_buffer;
+                out_buffer.clear();
+            }
+        }
 
         Ok(recv_bytes.len())
     }
