@@ -1,0 +1,3 @@
+#!/bin/bash
+rmmod c_misc_dev.ko
+insmod c_misc_dev.ko && script -efq /dev/null -c "dmesg" | tail -10

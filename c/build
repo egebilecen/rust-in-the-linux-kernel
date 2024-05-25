@@ -1,0 +1,2 @@
+#!/bin/bash
+make LLVM=1 && modinfo c_misc_dev.ko
