@@ -11,7 +11,7 @@ use crate::present80::Present80;
 mod present80;
 
 module! {
-    type: DeviceDriver,
+    type: KernelModule,
     name: "rust_misc_dev",
     author: "Ege Bilecen",
     description: "Miscellaneous device written in Rust.",
@@ -20,7 +20,7 @@ module! {
 
 const DEV_PREFIX: &str = "present80";
 
-struct DeviceDriver {
+struct KernelModule {
     _key_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
     _encrypt_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
 }
@@ -51,6 +51,7 @@ struct Device {
     encryption: Arc<Mutex<DeviceInner>>,
 }
 
+#[inline]
 fn get_device_inner<'a>(dev: &'a ArcBorrow<'a, Device>) -> &'a Arc<Mutex<DeviceInner>> {
     match dev.r#type {
         DeviceType::Key => &dev.key,
@@ -150,7 +151,7 @@ impl file::Operations for DeviceOperations {
     }
 }
 
-impl kernel::Module for DeviceDriver {
+impl kernel::Module for KernelModule {
     fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
         pr_info!("Initializing...\n");
 
@@ -178,7 +179,7 @@ impl kernel::Module for DeviceDriver {
             encryption: encryption_dev_inner.clone(),
         })?;
 
-        Ok(DeviceDriver {
+        Ok(KernelModule {
             _key_dev: miscdev::Registration::new_pinned(fmt!("{}_key", DEV_PREFIX), key_dev)?,
             _encrypt_dev: miscdev::Registration::new_pinned(
                 fmt!("{}_encrypt", DEV_PREFIX),
@@ -188,7 +189,7 @@ impl kernel::Module for DeviceDriver {
     }
 }
 
-impl Drop for DeviceDriver {
+impl Drop for KernelModule {
     fn drop(&mut self) {
         pr_info!("Exiting...\n");
     }
