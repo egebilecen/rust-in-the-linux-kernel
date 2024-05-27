@@ -12,9 +12,15 @@
 #define BUFFER_SIZE 10
 
 #define buffer_zeroes(buff, size) memset(buff, 0, size)
+
+enum misc_dev_type { KEY_DEVICE = 0, ENCRYPTION_DEVICE };
+
 struct misc_dev_data {
-    struct mutex lock;
-    bool is_in_use;
+	struct mutex lock;
+
+	enum misc_dev_type type;
+	bool is_in_use;
+
 	u8 in_buffer[BUFFER_SIZE];
 	u8 out_buffer[BUFFER_SIZE];
 };
@@ -59,12 +65,15 @@ static struct misc_dev_data *get_misc_dev_data(struct file *file)
 					       NULL;
 }
 
-static void init_misc_dev_data(struct misc_dev_data *data)
+static void init_misc_dev_data(struct misc_dev_data *data,
+			       enum misc_dev_type type)
 {
-    mutex_init(&data->lock);
-    data->is_in_use = false;
+	mutex_init(&data->lock);
 
-    /* When the device is opened for the first time,
+	data->type = type;
+	data->is_in_use = false;
+
+	/* When the device is opened for the first time,
      * buffer is set to all zeroes so we don't need
      * to do anything about it.
      */
@@ -72,8 +81,8 @@ static void init_misc_dev_data(struct misc_dev_data *data)
 
 static void init_misc_dev_group(struct misc_dev_group *group)
 {
-    init_misc_dev_data(&group->key);
-    init_misc_dev_data(&group->encryption);
+	init_misc_dev_data(&group->key, KEY_DEVICE);
+	init_misc_dev_data(&group->encryption, ENCRYPTION_DEVICE);
 }
 
 static int dev_open(struct inode *inode, struct file *file)
