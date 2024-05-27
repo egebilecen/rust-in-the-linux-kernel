@@ -1,6 +1,6 @@
 #include "linux/mutex.h"
-#include <linux/miscdevice.h>
-#include <linux/fs.h>
+#include "linux/miscdevice.h"
+#include "linux/fs.h"
 
 #define pr_fmt(fmt) "%s: " fmt, KBUILD_MODNAME
 
@@ -11,6 +11,7 @@
 /* In bytes. */
 #define BUFFER_SIZE 10
 
+#define buffer_zeroes(buff, size) memset(buff, 0, size)
 struct misc_dev_data {
     struct mutex lock;
     bool is_in_use;
@@ -90,6 +91,8 @@ static int dev_open(struct inode *inode, struct file *file)
     dev_data->is_in_use = true;
     memset(dev_data->in_buffer, 0, sizeof(dev_data->in_buffer));
     memset(dev_data->out_buffer, 0, sizeof(dev_data->out_buffer));
+	buffer_zeroes(dev_data->in_buffer, BUFFER_SIZE);
+	buffer_zeroes(dev_data->out_buffer, BUFFER_SIZE);
 
 out:
     mutex_unlock(&dev_data->lock);
