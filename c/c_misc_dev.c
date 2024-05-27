@@ -8,7 +8,9 @@
 #define DEVICE_NAME_ENCRYPTION DEVICE_PREFIX "_encrypt"
 
 /* In bytes. */
-#define BUFFER_SIZE 10
+#define MAX_BUFFER_SIZE 10
+#define KEY_BUFFER_SIZE MAX_BUFFER_SIZE
+#define ENCRYPTION_BUFFER_SIZE 8
 
 #define buffer_zeroes(buff, size) memset(buff, 0, size)
 
@@ -20,8 +22,8 @@ struct misc_dev_data {
 	enum misc_dev_type type;
 	bool is_in_use;
 
-	u8 in_buffer[BUFFER_SIZE];
-	u8 out_buffer[BUFFER_SIZE];
+	u8 in_buffer[MAX_BUFFER_SIZE];
+	u8 out_buffer[MAX_BUFFER_SIZE];
 };
 
 struct misc_dev_group {
@@ -97,8 +99,8 @@ static int dev_open(struct inode *inode, struct file *file)
 	}
 
 	dev_data->is_in_use = true;
-	buffer_zeroes(dev_data->in_buffer, BUFFER_SIZE);
-	buffer_zeroes(dev_data->out_buffer, BUFFER_SIZE);
+	buffer_zeroes(dev_data->in_buffer, MAX_BUFFER_SIZE);
+	buffer_zeroes(dev_data->out_buffer, MAX_BUFFER_SIZE);
 
 out:
 	mutex_unlock(&dev_data->lock);
@@ -108,27 +110,80 @@ out:
 static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
 			loff_t *offset)
 {
-	struct misc_dev_data *dev_data = get_misc_dev_data(file);
+	int return_val = 0;
 
-	return -EPERM;
+	struct misc_dev_data *dev_data = get_misc_dev_data(file);
+	struct misc_dev_data *key_dev_data = NULL;
+
+	mutex_lock(&dev_data->lock);
+
+	if (dev_data->type == KEY_DEVICE) {
+		pr_warn("Key device doesn't support read operation.\n");
+
+		return_val = -EPERM;
+		goto out;
+	}
+
+	key_dev_data = &dev_group.key;
+	mutex_lock(&key_dev_data->lock);
+
+	return_val = simple_read_from_buffer(buff, len, offset,
+					     dev_data->out_buffer,
+					     ENCRYPTION_BUFFER_SIZE);
+
+out:
+	if (key_dev_data)
+		mutex_unlock(&key_dev_data->lock);
+	mutex_unlock(&dev_data->lock);
+
+	return return_val;
 }
 
 static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 			 loff_t *offset)
 {
+	ssize_t ret_val = 0;
+	size_t buffer_size = 0;
 	struct misc_dev_data *dev_data = get_misc_dev_data(file);
 
-	return -EPERM;
+	mutex_lock(&dev_data->lock);
+
+	switch (dev_data->type) {
+	case KEY_DEVICE:
+		buffer_size = KEY_BUFFER_SIZE;
+		break;
+
+	case ENCRYPTION_DEVICE:
+		buffer_size = ENCRYPTION_BUFFER_SIZE;
+		break;
+	}
+
+	if (len > buffer_size) {
+		pr_err("Cannot write more than %d bytes into the buffer. Found %d bytes.\n",
+		       buffer_size, len);
+		ret_val = -EINVAL;
+		goto out;
+	}
+
+	ret_val = simple_write_to_buffer(dev_data->in_buffer, MAX_BUFFER_SIZE,
+					 offset, buff, len);
+
+	/* print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1, */
+	/* 	       dev_data->in_buffer, MAX_BUFFER_SIZE, true);     */
+
+out:
+	mutex_unlock(&dev_data->lock);
+	return ret_val;
 }
 
 static int dev_release(struct inode *inode, struct file *file)
 {
 	struct misc_dev_data *dev_data = get_misc_dev_data(file);
-    mutex_lock(&dev_data->lock);
+	mutex_lock(&dev_data->lock);
 
-    dev_data->is_in_use = false;
+	dev_data->is_in_use = false;
 
-    mutex_unlock(&dev_data->lock);
+	mutex_unlock(&dev_data->lock);
 	return 0;
 }
 
