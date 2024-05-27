@@ -1,4 +1,3 @@
-#include "linux/mutex.h"
 #include "linux/miscdevice.h"
 #include "linux/fs.h"
 
@@ -87,25 +86,23 @@ static void init_misc_dev_group(struct misc_dev_group *group)
 
 static int dev_open(struct inode *inode, struct file *file)
 {
-    int return_code = 0;
+	int return_val = 0;
 	struct misc_dev_data *dev_data = get_misc_dev_data(file);
 
-    mutex_lock(&dev_data->lock);
+	mutex_lock(&dev_data->lock);
 
-    if(dev_data->is_in_use) {
-        return_code = -EBUSY;
-        goto out;
-    }
+	if (dev_data->is_in_use) {
+		return_val = -EBUSY;
+		goto out;
+	}
 
-    dev_data->is_in_use = true;
-    memset(dev_data->in_buffer, 0, sizeof(dev_data->in_buffer));
-    memset(dev_data->out_buffer, 0, sizeof(dev_data->out_buffer));
+	dev_data->is_in_use = true;
 	buffer_zeroes(dev_data->in_buffer, BUFFER_SIZE);
 	buffer_zeroes(dev_data->out_buffer, BUFFER_SIZE);
 
 out:
-    mutex_unlock(&dev_data->lock);
-	return return_code;
+	mutex_unlock(&dev_data->lock);
+	return return_val;
 }
 
 static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
