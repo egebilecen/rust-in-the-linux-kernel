@@ -5,12 +5,11 @@
 
 #define DEVICE_PREFIX "present80"
 #define DEVICE_NAME_KEY DEVICE_PREFIX "_key"
-#define DEVICE_NAME_ENCRYPTION DEVICE_PREFIX "_encrypt"
+#define DEVICE_NAME_ENCRYPTION DEVICE_PREFIX "_encryption"
 
 #define BUFFER_SIZE 10 /* In bytes. */
 
 struct misc_dev_data {
-	atomic_t is_in_use;
 	u8 in_buffer[BUFFER_SIZE];
 	u8 out_buffer[BUFFER_SIZE];
 };
@@ -57,11 +56,9 @@ static struct misc_dev_data *get_misc_dev_data(struct file *file)
 
 static void init_misc_dev_group(struct misc_dev_group *group)
 {
-	group->key.is_in_use.counter = 0;
 	memset(group->key.in_buffer, 0, sizeof(group->key.in_buffer));
 	memset(group->key.out_buffer, 0, sizeof(group->key.out_buffer));
 
-	group->encryption.is_in_use.counter = 0;
 	memset(group->encryption.in_buffer, 0,
 	       sizeof(group->encryption.in_buffer));
 	memset(group->encryption.out_buffer, 0,
@@ -70,11 +67,6 @@ static void init_misc_dev_group(struct misc_dev_group *group)
 
 static int dev_open(struct inode *inode, struct file *file)
 {
-	struct misc_dev_data *dev_data = get_misc_dev_data(file);
-
-	if (atomic_cmpxchg(&dev_data->is_in_use, 0, 1))
-		return -EBUSY;
-
 	return 0;
 }
 
@@ -96,9 +88,6 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 
 static int dev_release(struct inode *inode, struct file *file)
 {
-	struct misc_dev_data *dev_data = get_misc_dev_data(file);
-    atomic_set(&dev_data->is_in_use, 0);
-
 	return 0;
 }
 
