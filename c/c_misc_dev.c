@@ -1,3 +1,4 @@
+#include "linux/mutex.h"
 #include <linux/miscdevice.h>
 #include <linux/fs.h>
 
@@ -5,11 +6,14 @@
 
 #define DEVICE_PREFIX "present80"
 #define DEVICE_NAME_KEY DEVICE_PREFIX "_key"
-#define DEVICE_NAME_ENCRYPTION DEVICE_PREFIX "_encryption"
+#define DEVICE_NAME_ENCRYPTION DEVICE_PREFIX "_encrypt"
 
-#define BUFFER_SIZE 10 /* In bytes. */
+/* In bytes. */
+#define BUFFER_SIZE 10
 
 struct misc_dev_data {
+    struct mutex lock;
+    bool is_in_use;
 	u8 in_buffer[BUFFER_SIZE];
 	u8 out_buffer[BUFFER_SIZE];
 };
@@ -54,20 +58,42 @@ static struct misc_dev_data *get_misc_dev_data(struct file *file)
 					       NULL;
 }
 
+static void init_misc_dev_data(struct misc_dev_data *data)
+{
+    mutex_init(&data->lock);
+    data->is_in_use = false;
+
+    /* When the device is opened for the first time,
+     * buffer is set to all zeroes so we don't need
+     * to do anything about it.
+     */
+}
+
 static void init_misc_dev_group(struct misc_dev_group *group)
 {
-	memset(group->key.in_buffer, 0, sizeof(group->key.in_buffer));
-	memset(group->key.out_buffer, 0, sizeof(group->key.out_buffer));
-
-	memset(group->encryption.in_buffer, 0,
-	       sizeof(group->encryption.in_buffer));
-	memset(group->encryption.out_buffer, 0,
-	       sizeof(group->encryption.out_buffer));
+    init_misc_dev_data(&group->key);
+    init_misc_dev_data(&group->encryption);
 }
 
 static int dev_open(struct inode *inode, struct file *file)
 {
-	return 0;
+    int return_code = 0;
+	struct misc_dev_data *dev_data = get_misc_dev_data(file);
+
+    mutex_lock(&dev_data->lock);
+
+    if(dev_data->is_in_use) {
+        return_code = -EBUSY;
+        goto out;
+    }
+
+    dev_data->is_in_use = true;
+    memset(dev_data->in_buffer, 0, sizeof(dev_data->in_buffer));
+    memset(dev_data->out_buffer, 0, sizeof(dev_data->out_buffer));
+
+out:
+    mutex_unlock(&dev_data->lock);
+	return return_code;
 }
 
 static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
@@ -88,6 +114,12 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 
 static int dev_release(struct inode *inode, struct file *file)
 {
+	struct misc_dev_data *dev_data = get_misc_dev_data(file);
+    mutex_lock(&dev_data->lock);
+
+    dev_data->is_in_use = false;
+
+    mutex_unlock(&dev_data->lock);
 	return 0;
 }
 
