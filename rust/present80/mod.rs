@@ -100,13 +100,22 @@ impl<'a> Present80<'a> {
         let mut state = u64::from_be_bytes(fixed_bytes);
         let round_keys = self.generate_round_keys()?;
 
+        pr_info!("Round Keys: {:#?}", round_keys);
+
         for i in 1..=TOTAL_ROUNDS {
+            pr_info!("Round {} - state: {}", i, state);
+
             state = self.add_round_key(state, round_keys[i - 1]);
+            pr_info!("add_round_key - state: {}", state);
 
             if i != TOTAL_ROUNDS {
                 state = self.substitution_layer(state);
+                pr_info!("substitution_layer - state: {}", state);
                 state = self.permutation_layer(state);
+                pr_info!("permutation_layer - state: {}", state);
             }
+
+            pr_info!("");
         }
 
         Ok(state.to_be_bytes())
