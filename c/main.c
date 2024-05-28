@@ -1,5 +1,6 @@
-#include "c_misc_dev.h"
+#include "main.h"
 #include "util.h"
+#include "present80/present80.h"
 
 static int dev_open(struct inode *, struct file *);
 static ssize_t dev_read(struct file *, char __user *, size_t, loff_t *);
@@ -20,8 +21,6 @@ static struct miscdevice encryption_dev = { .minor = MISC_DYNAMIC_MINOR,
 					    .fops = &dev_fops };
 
 static struct misc_dev_group dev_group;
-
-/*///////////////////////////////////////////////////////////////////////////*/
 
 static struct misc_dev_data *get_misc_dev_data(struct file *file)
 {
@@ -80,6 +79,7 @@ static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
 
 	struct misc_dev_data *dev_data = get_misc_dev_data(file);
 	struct misc_dev_data *key_dev_data = NULL;
+	union present80_key key;
 
 	mutex_lock(&dev_data->lock);
 
@@ -92,6 +92,9 @@ static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
 
 	key_dev_data = &dev_group.key;
 	mutex_lock(&key_dev_data->lock);
+
+	present80_create_key(key_dev_data->in_buffer, &key);
+	present80_encrypt(&key, dev_data->in_buffer, dev_data->out_buffer);
 
 	return_val = simple_read_from_buffer(buff, len, offset,
 					     dev_data->out_buffer,
