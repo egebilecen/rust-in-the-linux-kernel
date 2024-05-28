@@ -61,7 +61,7 @@ static u64 permutation_layer(u64 state)
 
 	for (size_t i = 0; i < 8; i++) {
 		size_t shift = i * 8;
-		size_t byte = (state & (0x0F << shift)) >> shift;
+		size_t byte = (state & (0xFF << shift)) >> shift;
 
 		for (size_t j = 0; j < 8; j++) {
 			size_t pos = (i * 8) + j;
