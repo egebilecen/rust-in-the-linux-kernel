@@ -1,5 +1,6 @@
 use crate::present80::key::Key;
 use crate::present80::math::{bit_ones, rotate_right};
+use crate::present80::util::print_block;
 use kernel::error::code;
 use kernel::prelude::*;
 
@@ -104,15 +105,19 @@ impl<'a> Present80<'a> {
 
         for i in 1..=TOTAL_ROUNDS {
             pr_info!("Round {} - state: {}", i, state);
+            print_block(&state.to_be_bytes(), 8);
 
             state = self.add_round_key(state, round_keys[i - 1]);
             pr_info!("add_round_key - state: {}", state);
+            print_block(&state.to_be_bytes(), 8);
 
             if i != TOTAL_ROUNDS {
                 state = self.substitution_layer(state);
                 pr_info!("substitution_layer - state: {}", state);
+                print_block(&state.to_be_bytes(), 8);
                 state = self.permutation_layer(state);
                 pr_info!("permutation_layer - state: {}", state);
+                print_block(&state.to_be_bytes(), 8);
             }
 
             pr_info!("");
