@@ -1,8 +1,8 @@
 #ifndef _C_MISC_DEV_H
 #define _C_MISC_DEV_H
 
-#include "linux/miscdevice.h"
-#include "linux/fs.h"
+#include <linux/miscdevice.h>
+#include <linux/fs.h>
 
 #define pr_fmt(fmt) "%s: " fmt, KBUILD_MODNAME
 
@@ -33,10 +33,5 @@ struct misc_dev_group {
 	struct misc_dev_data key;
 	struct misc_dev_data encryption;
 };
-
-static int dev_open(struct inode *, struct file *);
-static ssize_t dev_read(struct file *, char __user *, size_t, loff_t *);
-static ssize_t dev_write(struct file *, const char __user *, size_t, loff_t *);
-static int dev_release(struct inode *, struct file *);
 
 #endif

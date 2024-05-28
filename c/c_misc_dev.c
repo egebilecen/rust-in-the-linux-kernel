@@ -1,5 +1,10 @@
 #include "c_misc_dev.h"
 
+static int dev_open(struct inode *, struct file *);
+static ssize_t dev_read(struct file *, char __user *, size_t, loff_t *);
+static ssize_t dev_write(struct file *, const char __user *, size_t, loff_t *);
+static int dev_release(struct inode *, struct file *);
+
 static struct file_operations dev_fops = { .open = dev_open,
 					   .read = dev_read,
 					   .write = dev_write,
