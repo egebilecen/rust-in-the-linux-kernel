@@ -94,6 +94,15 @@ static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
 	mutex_lock(&key_dev_data->lock);
 
 	present80_create_key(key_dev_data->in_buffer, &key);
+
+    pr_info("Key dump:\n");
+	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1,
+		       key.bytes, KEY_BUFFER_SIZE, false);
+
+    pr_info("Plaintext dump:\n");
+	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1,
+		       dev_data->in_buffer, ENCRYPTION_BUFFER_SIZE, false);
+
 	present80_encrypt(&key, dev_data->in_buffer, dev_data->out_buffer);
 
 	return_val = simple_read_from_buffer(buff, len, offset,
