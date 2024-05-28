@@ -93,24 +93,12 @@ void present80_encrypt(const union present80_key *key, const u8 *bytes, u8 *out)
 	create_plaintext(bytes, &state);
 	generate_round_keys(key, round_keys);
 
-    pr_info("Round Keys:\n");
-
-    for(size_t i = 0; i < PRESENT80_TOTAL_ROUNDS; i++)
-    {
-        pr_info("%llu\n", round_keys[i]);
-    }
-
 	for (size_t i = 1; i <= PRESENT80_TOTAL_ROUNDS; i++) {
-        pr_info("Round %d - state: %llu", i, state.val);
-
 		state.val = add_round_key(state.val, round_keys[i - 1]);
-        pr_info("add_round_key - state: %llu\n", state.val);
 
 		if (i != PRESENT80_TOTAL_ROUNDS) {
 			state.val = substitution_layer(state.val);
-            pr_info("substitution_layer - state: %llu", state.val);
 			state.val = permutation_layer(state.val);
-            pr_info("permutation_layer - state: %llu", state.val);
 		}
 	}
 
