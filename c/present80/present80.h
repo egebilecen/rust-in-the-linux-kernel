@@ -4,9 +4,9 @@
 #include <linux/types.h>
 #include "types.h"
 
-#define TOTAL_ROUNDS 32
-#define KEY_SIZE 10
-#define BLOCK_SIZE 8
+#define PRESENT80_TOTAL_ROUNDS 32
+#define PRESENT80_KEY_SIZE 10
+#define PRESENT80_BLOCK_SIZE 8
 
 union present80_key {
 	u128 val;

@@ -23,7 +23,7 @@ static void generate_round_keys(const union present80_key *key, u64 *buff)
 {
 	u128 key_reg = key->val;
 
-	for (size_t i = 1; i <= TOTAL_ROUNDS; i++) {
+	for (size_t i = 1; i <= PRESENT80_TOTAL_ROUNDS; i++) {
 		buff[i - 1] = key_reg >> 16;
 
 		key_reg = rotate_right(key_reg, 19, 80);
@@ -78,31 +78,31 @@ static u64 permutation_layer(u64 state)
 static void create_plaintext(const u8 *bytes, union plaintext *plaintext)
 {
 	buffer_zeroes(plaintext->bytes, sizeof(u64));
-	memcpy(plaintext->bytes, bytes, BLOCK_SIZE);
+	memcpy(plaintext->bytes, bytes, PRESENT80_BLOCK_SIZE);
 }
 
 void present80_create_key(const u8 *bytes, union present80_key *key)
 {
 	buffer_zeroes(key->bytes, sizeof(u128));
-	memcpy(key->bytes, bytes, KEY_SIZE);
+	memcpy(key->bytes, bytes, PRESENT80_KEY_SIZE);
 }
 
 void present80_encrypt(const union present80_key *key, const u8 *bytes, u8 *out)
 {
 	union plaintext state;
-	u64 round_keys[TOTAL_ROUNDS];
+	u64 round_keys[PRESENT80_TOTAL_ROUNDS];
 
 	create_plaintext(bytes, &state);
 	generate_round_keys(key, round_keys);
 
-	for (size_t i = 1; i <= TOTAL_ROUNDS; i++) {
+	for (size_t i = 1; i <= PRESENT80_TOTAL_ROUNDS; i++) {
 		state.val = add_round_key(state.val, round_keys[i - 1]);
 
-		if (i != TOTAL_ROUNDS) {
+		if (i != PRESENT80_TOTAL_ROUNDS) {
 			state.val = substitution_layer(state.val);
 			state.val = permutation_layer(state.val);
 		}
 	}
 
-    memcpy(out, state.bytes, BLOCK_SIZE);
+	memcpy(out, state.bytes, PRESENT80_BLOCK_SIZE);
 }
