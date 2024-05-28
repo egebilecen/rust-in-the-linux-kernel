@@ -10,7 +10,7 @@
 
 union present80_key {
 	u128 val;
-	u8 *bytes;
+	u8 bytes[128 / 8];
 };
 
 void present80_create_key(const u8 *bytes, union present80_key *key);

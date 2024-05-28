@@ -16,7 +16,7 @@ static const u8 PERMUTATION_BOX[] = {
 
 union plaintext {
 	u64 val;
-	u8 *bytes;
+	u8 bytes[64 / 8];
 };
 
 static void generate_round_keys(const union present80_key *key, u64 *buff)
