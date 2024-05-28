@@ -2,16 +2,14 @@
 #include "math.h"
 #include "../util.h"
 
-static const u8 SUBSTITUTION_BOX[] = {
-	0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
-	0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2,
-};
+static const u8 SUBSTITUTION_BOX[] = { 0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
+				       0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2 };
 
 static const u8 PERMUTATION_BOX[] = {
 	0,  16, 32, 48, 1,  17, 33, 49, 2,  18, 34, 50, 3,  19, 35, 51,
 	4,  20, 36, 52, 5,  21, 37, 53, 6,  22, 38, 54, 7,  23, 39, 55,
 	8,  24, 40, 56, 9,  25, 41, 57, 10, 26, 42, 58, 11, 27, 43, 59,
-	12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63,
+	12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63
 };
 
 union plaintext {
@@ -45,8 +43,8 @@ static u64 substitution_layer(u64 state)
 	u64 substituted_state = 0x00;
 
 	for (size_t i = 0; i < 16; i++) {
-		size_t shift = i * 4;
-		size_t mask = 0x0F << shift;
+		u64 shift = i * 4;
+		u64 mask = 0x0F << shift;
 		u8 nibble = (state & mask) >> shift;
 
 		substituted_state |= SUBSTITUTION_BOX[nibble] << shift;
@@ -65,7 +63,7 @@ static u64 permutation_layer(u64 state)
 
 		for (size_t j = 0; j < 8; j++) {
 			size_t pos = (i * 8) + j;
-			size_t bit = (byte & (0x01 << j)) != 0 ? 1 : 0;
+			u8 bit = (byte & (0x01 << j)) != 0 ? 1 : 0;
 			size_t new_pos = PERMUTATION_BOX[pos];
 
 			permutated_state |= bit << new_pos;
