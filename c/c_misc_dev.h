@@ -15,8 +15,6 @@
 #define KEY_BUFFER_SIZE MAX_BUFFER_SIZE
 #define ENCRYPTION_BUFFER_SIZE 8
 
-#define buffer_zeroes(buff, size) memset(buff, 0, size)
-
 enum misc_dev_type { KEY_DEVICE = 0, ENCRYPTION_DEVICE };
 
 struct misc_dev_data {

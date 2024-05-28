@@ -1,4 +1,5 @@
 #include "c_misc_dev.h"
+#include "util.h"
 
 static int dev_open(struct inode *, struct file *);
 static ssize_t dev_read(struct file *, char __user *, size_t, loff_t *);
