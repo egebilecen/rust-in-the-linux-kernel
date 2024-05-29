@@ -1,5 +1,5 @@
 obj-m += c_misc_dev.o
-c_misc_dev-objs += main.o present80/present80.o present80/math.o
+c_misc_dev-objs += main.o util.o present80/present80.o present80/math.o
 
 PWD := $(CURDIR)
 
