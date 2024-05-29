@@ -33,16 +33,17 @@ impl<'a> Present80<'a> {
         let mut round_keys: [u64; TOTAL_ROUNDS] = [0; TOTAL_ROUNDS];
         let mut key_reg = u128::from(&self.key);
 
-        for i in 1..=TOTAL_ROUNDS {
-            let round_key = (key_reg >> 16) as u64;
-            round_keys[i - 1] = round_key;
+        round_keys[0] = (key_reg >> 16) as u64;
 
+        for (i, round_key) in round_keys.iter_mut().enumerate().take(TOTAL_ROUNDS).skip(1) {
             key_reg = rotate_right(key_reg, 19, 80);
 
             key_reg = (key_reg & !(0x0F << 76))
                 | ((SUBSTITUTION_BOX[(key_reg >> 76) as usize] as u128) << 76);
 
-            key_reg = (key_reg ^ (u128::try_from(i)? << 15)) & bit_ones(80);
+            key_reg ^= u128::try_from(i)? << 15;
+
+            *round_key = (key_reg >> 16) as u64;
         }
 
         Ok(round_keys)
@@ -89,7 +90,7 @@ impl<'a> Present80<'a> {
     pub(crate) fn encrypt(&self, bytes: &[u8]) -> Result<[u8; 8]> {
         if bytes.len() != 8 {
             pr_err!(
-                "Given bits doesn't match with block size of 64 bits! Len: {}",
+                "Given bits doesn't match with the block size of 64 bits! Len: {}",
                 bytes.len() * 8
             );
             return Err(code::EINVAL);

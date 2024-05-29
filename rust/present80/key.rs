@@ -24,9 +24,10 @@ impl<'a> TryFrom<&'a [u8]> for Key<'a> {
 impl From<&Key<'_>> for u128 {
     fn from(value: &Key<'_>) -> Self {
         let mut bytes: [u8; 16] = [0; 16];
+        let offset = 6;
 
         for (i, &byte) in value.bytes.iter().enumerate() {
-            bytes[(bytes.len() - 1) - i] = byte;
+            bytes[offset + i] = byte;
         }
 
         u128::from_be_bytes(bytes)
