@@ -112,7 +112,7 @@ void bytes_shift_left(u8 *bytes, size_t size, size_t shift_count)
 		u8 pb;
 		u8 npb;
 
-        /* For some reason, kernel crashes when I do something in the following reverse for loop:
+		/* For some reason, kernel crashes when I do something in the following reverse for loop:
          * for (size_t i = size - 1; i >= 0; i--) { ... }
          *
          * For example:
@@ -141,4 +141,10 @@ void bytes_shift_left(u8 *bytes, size_t size, size_t shift_count)
 
 		shift_count--;
 	}
+}
+
+void bytes_xor(u8 *first, u8 *second, size_t size)
+{
+	for (size_t i = 0; i < size; i++)
+		first[i] = first[i] ^ second[i];
 }
