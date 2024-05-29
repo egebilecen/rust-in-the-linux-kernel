@@ -100,3 +100,45 @@ void bytes_shift_right(u8 *bytes, size_t size, size_t shift_count)
 		shift_count--;
 	}
 }
+
+void bytes_shift_left(u8 *bytes, size_t size, size_t shift_count)
+{
+	if (shift_count >= size) {
+		buffer_zeroes(bytes, size);
+		return;
+	}
+
+	while (shift_count > 0) {
+		u8 pb;
+		u8 npb;
+
+        /* For some reason, kernel crashes when I do something in the following reverse for loop:
+         * for (size_t i = size - 1; i >= 0; i--) { ... }
+         *
+         * For example:
+         * u8 *b = bytes + i;
+         * *b = 0; <-- Crash / infinite loop occurs.
+         * So I had to create regular loop and then store the reverse index in the variable `j`.
+         * */
+		for (size_t i = 0; i < size; i++) {
+			size_t j = size - 1 - i;
+
+			u8 *b = bytes + j;
+			u8 *nb = j == 0 ? bytes : (bytes + (j - 1));
+
+			if (j == 0) {
+				*b = pb;
+			} else if (j == size - 1) {
+				pb = *b;
+				npb = *nb;
+				*b = 0x00;
+			} else {
+				*b = pb;
+				pb = npb;
+				npb = *nb;
+			}
+		}
+
+		shift_count--;
+	}
+}
