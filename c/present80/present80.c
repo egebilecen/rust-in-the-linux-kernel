@@ -1,7 +1,8 @@
 #include "present80.h"
-#include "math.h"
 #include "../util.h"
 
+/* TODO: Move present80 files to the main folder. */
+/* TODO: Change zeroes to zeros. */
 static const u8 SUBSTITUTION_BOX[] = { 0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
 				       0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2 };
 
@@ -12,95 +13,87 @@ static const u8 PERMUTATION_BOX[] = {
 	12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63
 };
 
-union plaintext {
-	u64 val;
-	u8 bytes[64 / 8];
-};
-
-static void generate_round_keys(const union present80_key *key, u64 *buff)
+static void generate_round_keys(const u8 *key, u8 *buff)
 {
-	u128 key_reg = key->val;
+	u8 key_reg[PRESENT80_KEY_SIZE];
+	u32 temp;
 
-	for (size_t i = 1; i <= PRESENT80_TOTAL_ROUNDS; i++) {
-		buff[i - 1] = key_reg >> 16;
+	memcpy(key_reg, key, PRESENT80_KEY_SIZE);
+	memcpy(buff, key_reg, PRESENT80_BLOCK_SIZE);
 
-		key_reg = rotate_right(key_reg, 19, 80);
+	for (size_t i = 1; i < PRESENT80_TOTAL_ROUNDS; i++) {
+		bytes_rotate_right(key_reg, PRESENT80_KEY_SIZE, 19);
 
-		key_reg = (key_reg & ~((u128)0x0F << 76)) |
-			  ((u128)SUBSTITUTION_BOX[key_reg >> 76] << 76);
+		key_reg[0] = (SUBSTITUTION_BOX[key_reg[0] >> 4] << 4) |
+			     (key_reg[0] & 0x0F);
 
-		key_reg = (key_reg ^ (i << 15)) & bit_ones(80);
+		temp = cpu_to_be32(i << 15);
+		bytes_xor(key_reg + (PRESENT80_KEY_SIZE - 1) - 3, (u8 *)&temp,
+			  3);
+
+		memcpy(buff + (PRESENT80_BLOCK_SIZE * i), key_reg,
+		       PRESENT80_BLOCK_SIZE);
 	}
 }
 
-static inline u64 add_round_key(u64 state, u64 key)
+static inline void add_round_key(u8 *state, const u8 *key)
 {
-	return state ^ key;
+	bytes_xor(state, key, PRESENT80_BLOCK_SIZE);
 }
 
-static u64 substitution_layer(u64 state)
+static void substitution_layer(u8 *state)
 {
-	u64 substituted_state = 0x00;
+	for (size_t i = 0; i < PRESENT80_BLOCK_SIZE; i++) {
+		u8 upper_nibble = (state[i] & 0xF0) >> 4;
+		u8 lower_nibble = state[i] & 0x0F;
 
-	for (size_t i = 0; i < 16; i++) {
-		u64 shift = i * 4;
-		u64 mask = 0x0F << shift;
-		u8 nibble = (state & mask) >> shift;
-
-		substituted_state |= SUBSTITUTION_BOX[nibble] << shift;
+		state[i] = (SUBSTITUTION_BOX[upper_nibble] << 4) |
+			   SUBSTITUTION_BOX[lower_nibble];
 	}
-
-	return substituted_state;
 }
 
-static u64 permutation_layer(u64 state)
+static void permutation_layer(u8 *state)
 {
-	u64 permutated_state = 0x00;
+	u8 permutated_state[PRESENT80_BLOCK_SIZE];
+	buffer_zeroes(permutated_state, PRESENT80_BLOCK_SIZE);
 
-	for (size_t i = 0; i < 8; i++) {
-		size_t shift = i * 8;
-		u8 byte = (state & (0xFF << shift)) >> shift;
+	for (size_t _i = 0; _i < PRESENT80_BLOCK_SIZE; _i++) {
+		size_t i = (PRESENT80_BLOCK_SIZE - 1) - _i;
+		u8 byte = state[i];
 
 		for (size_t j = 0; j < 8; j++) {
-			size_t pos = (i * 8) + j;
+			size_t pos = (_i * PRESENT80_BLOCK_SIZE) + j;
 			u8 bit = (byte & (0x01 << j)) != 0 ? 1 : 0;
-			u8 new_pos = PERMUTATION_BOX[pos];
 
-			permutated_state |= bit << new_pos;
+			u8 new_pos = PERMUTATION_BOX[pos];
+			size_t byte_pos =
+				(PRESENT80_BLOCK_SIZE - 1) - (new_pos / 8);
+			size_t bit_pos = new_pos % 8;
+
+			permutated_state[byte_pos] |= bit << bit_pos;
 		}
 	}
 
-	return permutated_state;
+	memcpy(state, permutated_state, PRESENT80_BLOCK_SIZE);
 }
 
-static void create_plaintext(const u8 *bytes, union plaintext *plaintext)
+void present80_encrypt(const u8 *key, const u8 *bytes, u8 *out)
 {
-	buffer_zeroes(plaintext->bytes, sizeof(u64));
-	memcpy(plaintext->bytes, bytes, PRESENT80_BLOCK_SIZE);
-}
+	u8 state[PRESENT80_BLOCK_SIZE];
+	u8 round_keys[8 * PRESENT80_TOTAL_ROUNDS];
 
-void present80_create_key(const u8 *bytes, union present80_key *key)
-{
-	buffer_zeroes(key->bytes, sizeof(u128));
-	memcpy(key->bytes, bytes, PRESENT80_KEY_SIZE);
-}
-
-void present80_encrypt(const union present80_key *key, const u8 *bytes, u8 *out)
-{
-	union plaintext state;
-	u64 round_keys[PRESENT80_TOTAL_ROUNDS];
-
-	create_plaintext(bytes, &state);
 	generate_round_keys(key, round_keys);
+	memcpy(state, bytes, PRESENT80_BLOCK_SIZE);
 
 	for (size_t i = 1; i <= PRESENT80_TOTAL_ROUNDS; i++) {
-		state.val = add_round_key(state.val, round_keys[i - 1]);
+		add_round_key(state,
+			      round_keys + ((i - 1) * PRESENT80_BLOCK_SIZE));
 
 		if (i != PRESENT80_TOTAL_ROUNDS) {
-			state.val = substitution_layer(state.val);
-			state.val = permutation_layer(state.val);
+			substitution_layer(state);
+			permutation_layer(state);
 		}
 	}
 
-	memcpy(out, state.bytes, PRESENT80_BLOCK_SIZE);
+	memcpy(out, state, PRESENT80_BLOCK_SIZE);
 }

@@ -143,7 +143,7 @@ void bytes_shift_left(u8 *bytes, size_t size, size_t shift_count)
 	}
 }
 
-void bytes_xor(u8 *first, u8 *second, size_t size)
+void bytes_xor(u8 *first, const u8 *second, size_t size)
 {
 	for (size_t i = 0; i < size; i++)
 		first[i] = first[i] ^ second[i];
