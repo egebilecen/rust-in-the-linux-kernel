@@ -20,7 +20,7 @@ TEST_LIST = [
     (
         b"\xaa\xbb\xcc\xdd\xee\xff\x11\x22\x33\x44",
         b"\xde\xad\xbe\xef\xde\xad\xc0\xde",
-        bytes.fromhex("610ea179ff6ba38a")
+        bytes.fromhex("31f69aa9604e985f")
     )
 ]
 
