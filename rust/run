@@ -1,3 +1,4 @@
 #!/bin/bash
-rmmod kernel_mod.ko
+rmmod kernel_mod
+rmmod c_misc_dev
 insmod kernel_mod.ko && script -efq /dev/null -c "dmesg" | tail -10
