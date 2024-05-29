@@ -16,5 +16,6 @@
 
 void print_binary(const u8 *bytes, size_t size, size_t group);
 void bytes_rotate_right(u8 *bytes, size_t size, size_t bit_count);
+void bytes_shift_right(u8 *bytes, size_t size, size_t shift_count);
 
 #endif

@@ -68,3 +68,35 @@ void bytes_rotate_right(u8 *bytes, size_t size, size_t bit_count)
 		bit_count -= shift_count;
 	}
 }
+
+void bytes_shift_right(u8 *bytes, size_t size, size_t shift_count)
+{
+	if (shift_count >= size) {
+		buffer_zeroes(bytes, size);
+		return;
+	}
+
+	while (shift_count > 0) {
+		u8 pb;
+		u8 npb;
+
+		for (size_t i = 0; i < size; i++) {
+			u8 *b = bytes + i;
+			u8 *nb = i == size - 1 ? bytes : (bytes + (i + 1));
+
+			if (i == 0) {
+				pb = *b;
+				npb = *nb;
+				*b = 0x00;
+			} else if (i == size - 1) {
+				*b = pb;
+			} else {
+				*b = pb;
+				pb = npb;
+				npb = *nb;
+			}
+		}
+
+		shift_count--;
+	}
+}
