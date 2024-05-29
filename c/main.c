@@ -95,11 +95,11 @@ static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
 
 	present80_create_key(key_dev_data->in_buffer, &key);
 
-    pr_info("Key dump:\n");
-	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1,
-		       key.bytes, KEY_BUFFER_SIZE, false);
+	pr_info("Key dump:\n");
+	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1, key.bytes,
+		       KEY_BUFFER_SIZE, false);
 
-    pr_info("Plaintext dump:\n");
+	pr_info("Plaintext dump:\n");
 	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1,
 		       dev_data->in_buffer, ENCRYPTION_BUFFER_SIZE, false);
 
@@ -170,6 +170,13 @@ static int __init dev_init(void)
 	int error;
 	pr_info("Initializing...\n");
 
+	u8 test_in[] = { 0xB5, 0x5B, 0x4B, 0x05 };
+	/* u8 test_out[4] = { 0 }; */
+	print_binary(test_in, 4, 8);
+	bytes_rotate_right(test_in, 4, 5);
+	print_binary(test_in, 4, 8);
+	return 0;
+
 	init_misc_dev_group(&dev_group);
 
 	error = misc_register(&key_dev);
@@ -195,6 +202,7 @@ static int __init dev_init(void)
 
 static void __exit dev_exit(void)
 {
+	return;
 	misc_deregister(&key_dev);
 	misc_deregister(&encryption_dev);
 

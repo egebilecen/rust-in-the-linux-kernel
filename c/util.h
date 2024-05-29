@@ -15,6 +15,6 @@
 #define MASK_8_BITS 0xFF
 
 void print_binary(const u8 *bytes, size_t size, size_t group);
-void bytes_rotate_right(const u8 *bytes, size_t size, size_t bits, u8 *out);
+void bytes_rotate_right(u8 *bytes, size_t size, size_t bits);
 
 #endif
