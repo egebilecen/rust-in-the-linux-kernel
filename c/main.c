@@ -146,9 +146,6 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 	ret_val = simple_write_to_buffer(dev_data->in_buffer, MAX_BUFFER_SIZE,
 					 offset, buff, len);
 
-	/* print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1, */
-	/* 	       dev_data->in_buffer, MAX_BUFFER_SIZE, true);     */
-
 out:
 	mutex_unlock(&dev_data->lock);
 	return ret_val;
@@ -169,13 +166,6 @@ static int __init dev_init(void)
 {
 	int error;
 	pr_info("Initializing...\n");
-
-	u8 test_in[] = { 0xB5, 0x5B, 0x4B, 0x05 };
-	/* u8 test_out[4] = { 0 }; */
-	print_binary(test_in, 4, 8);
-	bytes_rotate_right(test_in, 4, 5);
-	print_binary(test_in, 4, 8);
-	return 0;
 
 	init_misc_dev_group(&dev_group);
 
@@ -202,7 +192,6 @@ static int __init dev_init(void)
 
 static void __exit dev_exit(void)
 {
-	return;
 	misc_deregister(&key_dev);
 	misc_deregister(&encryption_dev);
 
