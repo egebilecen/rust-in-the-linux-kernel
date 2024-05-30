@@ -42,8 +42,8 @@ impl DeviceType {
 
 struct DeviceInner {
     is_in_use: bool,
-    in_buffer: [u8; 10],
-    out_buffer: [u8; 10],
+    in_buffer: [u8; MAX_BUFFER_SIZE],
+    out_buffer: [u8; MAX_BUFFER_SIZE],
 }
 
 struct Device {
