@@ -72,7 +72,7 @@ void bytes_rotate_right(u8 *bytes, size_t size, size_t bit_count)
 void bytes_shift_right(u8 *bytes, size_t size, size_t shift_count)
 {
 	if (shift_count >= size) {
-		buffer_zeroes(bytes, size);
+		buffer_zeros(bytes, size);
 		return;
 	}
 
@@ -104,7 +104,7 @@ void bytes_shift_right(u8 *bytes, size_t size, size_t shift_count)
 void bytes_shift_left(u8 *bytes, size_t size, size_t shift_count)
 {
 	if (shift_count >= size) {
-		buffer_zeroes(bytes, size);
+		buffer_zeros(bytes, size);
 		return;
 	}
 

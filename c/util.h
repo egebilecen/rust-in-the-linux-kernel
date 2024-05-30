@@ -3,7 +3,7 @@
 
 #include <linux/string.h>
 
-#define buffer_zeroes(buff, size) memset(buff, 0, size)
+#define buffer_zeros(buff, size) memset(buff, 0, size)
 
 #define MASK_1_BITS 0x01
 #define MASK_2_BITS 0x03

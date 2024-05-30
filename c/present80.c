@@ -55,7 +55,7 @@ static void substitution_layer(u8 *state)
 static void permutation_layer(u8 *state)
 {
 	u8 permutated_state[PRESENT80_BLOCK_SIZE];
-	buffer_zeroes(permutated_state, PRESENT80_BLOCK_SIZE);
+	buffer_zeros(permutated_state, PRESENT80_BLOCK_SIZE);
 
 	for (size_t _i = 0; _i < PRESENT80_BLOCK_SIZE; _i++) {
 		size_t i = (PRESENT80_BLOCK_SIZE - 1) - _i;

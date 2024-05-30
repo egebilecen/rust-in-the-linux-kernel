@@ -1,6 +1,6 @@
 #include "main.h"
 #include "util.h"
-#include "present80/present80.h"
+#include "present80.h"
 
 static int dev_open(struct inode *, struct file *);
 static ssize_t dev_read(struct file *, char __user *, size_t, loff_t *);
@@ -64,8 +64,8 @@ static int dev_open(struct inode *inode, struct file *file)
 	}
 
 	dev_data->is_in_use = true;
-	buffer_zeroes(dev_data->in_buffer, MAX_BUFFER_SIZE);
-	buffer_zeroes(dev_data->out_buffer, MAX_BUFFER_SIZE);
+	buffer_zeros(dev_data->in_buffer, MAX_BUFFER_SIZE);
+	buffer_zeros(dev_data->out_buffer, MAX_BUFFER_SIZE);
 
 out:
 	mutex_unlock(&dev_data->lock);
