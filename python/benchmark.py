@@ -52,8 +52,8 @@ def get_time_result(time_ns):
     }
 
 
-TOTAL_KEYS = 100
-TOTAL_PLAINTEXTS = 100
+TOTAL_KEYS = 1000
+TOTAL_PLAINTEXTS = 1000
 TOTAL_ENCRYPTION = TOTAL_KEYS * TOTAL_PLAINTEXTS
 
 key_list: list[bytes] = []
