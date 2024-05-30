@@ -10,10 +10,7 @@
 #define DEVICE_NAME_KEY DEVICE_PREFIX "_key"
 #define DEVICE_NAME_ENCRYPTION DEVICE_PREFIX "_encrypt"
 
-/* In bytes. */
 #define MAX_BUFFER_SIZE 10
-#define KEY_BUFFER_SIZE MAX_BUFFER_SIZE
-#define ENCRYPTION_BUFFER_SIZE 8
 
 enum misc_dev_type { KEY_DEVICE = 0, ENCRYPTION_DEVICE };
 

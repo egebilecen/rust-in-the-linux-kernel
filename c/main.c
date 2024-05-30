@@ -102,9 +102,8 @@ static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
 	present80_encrypt(key_dev_data->in_buffer, dev_data->in_buffer,
 			  dev_data->out_buffer);
 
-	return_val = simple_read_from_buffer(buff, len, offset,
-					     dev_data->out_buffer,
-					     ENCRYPTION_BUFFER_SIZE);
+	return_val = simple_read_from_buffer(
+		buff, len, offset, dev_data->out_buffer, PRESENT80_BLOCK_SIZE);
 
 out:
 	if (key_dev_data)
@@ -132,9 +131,9 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 
 	switch (dev_data->type) {
 	case KEY_DEVICE:
-		if (len != KEY_BUFFER_SIZE) {
+		if (len != PRESENT80_KEY_SIZE) {
 			pr_err("Key device requires %d bytes to be written. Found %d bytes.\n",
-			       KEY_BUFFER_SIZE, len);
+			       PRESENT80_KEY_SIZE, len);
 
 			ret_val = -EINVAL;
 			goto out;
@@ -142,9 +141,9 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 		break;
 
 	case ENCRYPTION_DEVICE:
-		if (len != ENCRYPTION_BUFFER_SIZE) {
+		if (len != PRESENT80_BLOCK_SIZE) {
 			pr_err("Encryption device requires %d bytes to be written. Found %d bytes.\n",
-			       ENCRYPTION_BUFFER_SIZE, len);
+			       PRESENT80_BLOCK_SIZE, len);
 
 			ret_val = -EINVAL;
 			goto out;
