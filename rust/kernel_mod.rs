@@ -90,9 +90,15 @@ impl file::Operations for DeviceOperations {
     ) -> Result<usize> {
         // Key device doesn't support read operation.
         if let DeviceType::Key = data.r#type {
-            pr_warn!("Key device doesn't support read operation.");
+            pr_err!("Key device doesn't support read operation.");
             pr_info!("");
             return Err(code::EPERM);
+        }
+
+        if offset != 0 {
+            pr_err!("Encryption device doesn't support partial read. Offset is not 0.");
+            pr_info!("");
+            return Err(code::EINVAL);
         }
 
         let mut device = data.encryption.lock();
@@ -116,8 +122,14 @@ impl file::Operations for DeviceOperations {
         data: ArcBorrow<'_, Device>,
         _file: &file::File,
         reader: &mut impl kernel::io_buffer::IoBufferReader,
-        _offset: u64,
+        offset: u64,
     ) -> Result<usize> {
+        if offset != 0 {
+            pr_err!("PRESENT80 devices doesn't support partial write. Offset is not 0.");
+            pr_info!("");
+            return Err(code::EINVAL);
+        }
+
         let recv_bytes = reader.read_all()?;
 
         match data.r#type {
