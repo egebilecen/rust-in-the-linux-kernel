@@ -1,5 +1,5 @@
 #include "present80.h"
-#include "../util.h"
+#include "util.h"
 
 /* TODO: Move present80 files to the main folder. */
 /* TODO: Change zeroes to zeros. */
