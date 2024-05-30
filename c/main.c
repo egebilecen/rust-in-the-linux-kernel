@@ -83,9 +83,16 @@ static ssize_t dev_read(struct file *file, char __user *buff, size_t len,
 	mutex_lock(&dev_data->lock);
 
 	if (dev_data->type == KEY_DEVICE) {
-		pr_warn("Key device doesn't support read operation.\n");
+		pr_err("Key device doesn't support read operation.\n");
 
 		return_val = -EPERM;
+		goto out;
+	}
+
+	if (*offset != 0) {
+		pr_err("Encryption device doesn't support partial read. Offset is not 0.\n");
+
+		return_val = -EINVAL;
 		goto out;
 	}
 
@@ -111,8 +118,16 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 			 loff_t *offset)
 {
 	ssize_t ret_val = 0;
-	struct misc_dev_data *dev_data = get_misc_dev_data(file);
+	struct misc_dev_data *dev_data = NULL;
 
+	if (*offset != 0) {
+		pr_err("PRESENT80 devices doesn't support partial write. Offset is not 0.\n");
+
+		ret_val = -EINVAL;
+		goto out;
+	}
+
+	dev_data = get_misc_dev_data(file);
 	mutex_lock(&dev_data->lock);
 
 	switch (dev_data->type) {
@@ -120,6 +135,7 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 		if (len != KEY_BUFFER_SIZE) {
 			pr_err("Key device requires %d bytes to be written. Found %d bytes.\n",
 			       KEY_BUFFER_SIZE, len);
+
 			ret_val = -EINVAL;
 			goto out;
 		}
@@ -127,8 +143,9 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 
 	case ENCRYPTION_DEVICE:
 		if (len != ENCRYPTION_BUFFER_SIZE) {
-			pr_err("Encrypt device requires %d bytes to be written. Found %d bytes.\n",
+			pr_err("Encryption device requires %d bytes to be written. Found %d bytes.\n",
 			       ENCRYPTION_BUFFER_SIZE, len);
+
 			ret_val = -EINVAL;
 			goto out;
 		}
@@ -165,7 +182,7 @@ static int __init dev_init(void)
 
 	if (error) {
 		printk(KERN_ERR
-		       "An error occured during registering the key device! Error: %d",
+		       "An error occured during registering the key device. Error: %d\n",
 		       error);
 		return error;
 	}
@@ -174,7 +191,7 @@ static int __init dev_init(void)
 
 	if (error) {
 		printk(KERN_ERR
-		       "An error occured during registering the encryption device! Error: %d",
+		       "An error occured during registering the encryption device. Error: %d\n",
 		       error);
 		return error;
 	}
