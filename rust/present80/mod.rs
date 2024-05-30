@@ -1,5 +1,5 @@
 use crate::present80::key::Key;
-use crate::present80::math::{bit_ones, rotate_right};
+use crate::present80::math::rotate_right;
 use kernel::error::code;
 use kernel::prelude::*;
 
