@@ -4,7 +4,6 @@ use kernel::error::code;
 use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
-use present80::key::Key;
 
 use crate::present80::Present80;
 
@@ -19,6 +18,7 @@ module! {
 }
 
 const DEV_PREFIX: &str = "present80";
+const MAX_BUFFER_SIZE: usize = 10;
 
 struct KernelModule {
     _key_dev: Pin<Box<miscdev::Registration<DeviceOperations>>>,
@@ -42,8 +42,8 @@ impl DeviceType {
 
 struct DeviceInner {
     is_in_use: bool,
-    in_buffer: Vec<u8>,
-    out_buffer: Vec<u8>,
+    in_buffer: [u8; 10],
+    out_buffer: [u8; 10],
 }
 
 struct Device {
@@ -76,8 +76,8 @@ impl file::Operations for DeviceOperations {
         }
 
         device.is_in_use = true;
-        device.in_buffer.clear();
-        device.out_buffer.clear();
+        device.in_buffer.fill(0);
+        device.out_buffer.fill(0);
 
         Ok(data.clone())
     }
@@ -91,26 +91,23 @@ impl file::Operations for DeviceOperations {
         // Key device doesn't support read operation.
         if let DeviceType::Key = data.r#type {
             pr_warn!("Key device doesn't support read operation.");
+            pr_info!("");
             return Err(code::EPERM);
         }
 
         let mut device = data.encryption.lock();
         let key_device = data.key.lock();
 
-        if device.out_buffer.is_empty() {
-            let key = Key::try_from(key_device.in_buffer.as_slice())?;
-            let cipher = Present80::new(key);
-            let cipher_text = cipher.encrypt(device.in_buffer.as_slice())?;
+        let cipher = Present80::new(&key_device.in_buffer);
+        let cipher_text = cipher.encrypt(&device.in_buffer)?;
 
-            let out_buffer = &mut device.out_buffer;
-            out_buffer.try_extend_from_slice(&cipher_text)?;
+        for (i, &byte) in cipher_text.iter().enumerate() {
+            device.out_buffer[i] = byte;
         }
 
-        let out_buffer = &device.out_buffer;
-
         let offset = usize::try_from(offset)?;
-        let len = min(writer.len(), out_buffer.len().saturating_sub(offset));
-        writer.write_slice(&out_buffer[offset..][..len])?;
+        let len = min(writer.len(), device.out_buffer.len().saturating_sub(offset));
+        writer.write_slice(&device.out_buffer[offset..][..len])?;
 
         Ok(len)
     }
@@ -119,24 +116,39 @@ impl file::Operations for DeviceOperations {
         data: ArcBorrow<'_, Device>,
         _file: &file::File,
         reader: &mut impl kernel::io_buffer::IoBufferReader,
-        offset: u64,
+        _offset: u64,
     ) -> Result<usize> {
         let recv_bytes = reader.read_all()?;
-        let mut device = (get_device_inner(&data)).lock();
 
-        let in_buffer = &mut device.in_buffer;
-
-        if offset == 0 {
-            in_buffer.clear();
+        match data.r#type {
+            DeviceType::Key => {
+                if recv_bytes.len() != present80::KEY_SIZE {
+                    pr_err!(
+                        "Key device requires {} bytes to be written. Found {} bytes.",
+                        present80::KEY_SIZE,
+                        recv_bytes.len()
+                    );
+                    pr_info!("");
+                    return Err(code::EINVAL);
+                }
+            }
+            DeviceType::Encryption => {
+                if recv_bytes.len() != present80::BLOCK_SIZE {
+                    pr_err!(
+                        "Encryption device requires {} bytes to be written. Found {} bytes.",
+                        present80::BLOCK_SIZE,
+                        recv_bytes.len()
+                    );
+                    pr_info!("");
+                    return Err(code::EINVAL);
+                }
+            }
         }
 
-        in_buffer.try_extend_from_slice(&recv_bytes[..])?;
+        let mut device = (get_device_inner(&data)).lock();
 
-        if offset == 0 {
-            if let DeviceType::Encryption = data.r#type {
-                let out_buffer = &mut device.out_buffer;
-                out_buffer.clear();
-            }
+        for (i, &byte) in recv_bytes.iter().enumerate() {
+            device.in_buffer[i] = byte;
         }
 
         Ok(recv_bytes.len())
@@ -152,18 +164,19 @@ impl file::Operations for DeviceOperations {
 
 impl kernel::Module for KernelModule {
     fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
-        pr_info!("Initializing...\n");
+        pr_info!("Initializing...");
+        pr_info!("");
 
         let key_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
-            in_buffer: Vec::new(),
-            out_buffer: Vec::new(),
+            in_buffer: [0; MAX_BUFFER_SIZE],
+            out_buffer: [0; MAX_BUFFER_SIZE],
         }))?;
 
         let encryption_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
-            in_buffer: Vec::new(),
-            out_buffer: Vec::new(),
+            in_buffer: [0; MAX_BUFFER_SIZE],
+            out_buffer: [0; MAX_BUFFER_SIZE],
         }))?;
 
         let key_dev = Arc::try_new(Device {
@@ -190,6 +203,7 @@ impl kernel::Module for KernelModule {
 
 impl Drop for KernelModule {
     fn drop(&mut self) {
-        pr_info!("Exiting...\n");
+        pr_info!("Exiting...");
+        pr_info!("");
     }
 }

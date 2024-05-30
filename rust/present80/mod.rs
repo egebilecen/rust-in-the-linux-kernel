@@ -1,12 +1,11 @@
-use crate::present80::key::Key;
 use crate::present80::math::rotate_right;
-use kernel::error::code;
 use kernel::prelude::*;
 
-pub(crate) mod key;
 pub(crate) mod math;
 pub(crate) mod util;
 
+pub(crate) const KEY_SIZE: usize = 10;
+pub(crate) const BLOCK_SIZE: usize = 8;
 const TOTAL_ROUNDS: usize = 32;
 
 const SUBSTITUTION_BOX: &[u8] = &[
@@ -20,17 +19,23 @@ const PERMUTATION_BOX: &[u8] = &[
 ];
 
 pub(crate) struct Present80<'a> {
-    pub(crate) key: Key<'a>,
+    pub(crate) key: &'a [u8; KEY_SIZE],
 }
 
 impl<'a> Present80<'a> {
-    pub(crate) fn new(key: Key<'a>) -> Self {
+    pub(crate) fn new(key: &'a [u8; KEY_SIZE]) -> Self {
         Self { key }
     }
 
     fn generate_round_keys(&self) -> Result<[u64; TOTAL_ROUNDS]> {
         let mut round_keys: [u64; TOTAL_ROUNDS] = [0; TOTAL_ROUNDS];
-        let mut key_reg = u128::from(&self.key);
+
+        let mut key: [u8; 16] = [0; 16];
+        for (i, &byte) in self.key.iter().enumerate() {
+            key[6 + i] = byte;
+        }
+
+        let mut key_reg = u128::from_be_bytes(key);
 
         round_keys[0] = (key_reg >> 16) as u64;
 
@@ -87,14 +92,6 @@ impl<'a> Present80<'a> {
     }
 
     pub(crate) fn encrypt(&self, bytes: &[u8]) -> Result<[u8; 8]> {
-        if bytes.len() != 8 {
-            pr_err!(
-                "Given bits doesn't match with the block size of 64 bits! Len: {}",
-                bytes.len() * 8
-            );
-            return Err(code::EINVAL);
-        }
-
         let mut fixed_bytes: [u8; 8] = [0; 8];
         fixed_bytes.copy_from_slice(&bytes[..8]);
 
