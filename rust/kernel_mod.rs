@@ -30,6 +30,7 @@ enum DeviceType {
     Encryption,
 }
 
+#[allow(unused)]
 impl DeviceType {
     fn as_str(&self) -> &str {
         match self {
@@ -67,8 +68,6 @@ impl file::Operations for DeviceOperations {
     type OpenData = Self::Data;
 
     fn open(data: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
-        pr_info!("{} device is opened.", &data.r#type.as_str());
-
         let device = data.as_arc_borrow();
         let mut device = (get_device_inner(&device)).lock();
 
