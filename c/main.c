@@ -111,26 +111,28 @@ static ssize_t dev_write(struct file *file, const char __user *buff, size_t len,
 			 loff_t *offset)
 {
 	ssize_t ret_val = 0;
-	size_t buffer_size = 0;
 	struct misc_dev_data *dev_data = get_misc_dev_data(file);
 
 	mutex_lock(&dev_data->lock);
 
 	switch (dev_data->type) {
 	case KEY_DEVICE:
-		buffer_size = KEY_BUFFER_SIZE;
+		if (len != KEY_BUFFER_SIZE) {
+			pr_err("Key device requires %d bytes to be written. Found %d bytes.\n",
+			       KEY_BUFFER_SIZE, len);
+			ret_val = -EINVAL;
+			goto out;
+		}
 		break;
 
 	case ENCRYPTION_DEVICE:
-		buffer_size = ENCRYPTION_BUFFER_SIZE;
+		if (len != ENCRYPTION_BUFFER_SIZE) {
+			pr_err("Encrypt device requires %d bytes to be written. Found %d bytes.\n",
+			       ENCRYPTION_BUFFER_SIZE, len);
+			ret_val = -EINVAL;
+			goto out;
+		}
 		break;
-	}
-
-	if (len > buffer_size) {
-		pr_err("Cannot write more than %d bytes into the buffer. Found %d bytes.\n",
-		       buffer_size, len);
-		ret_val = -EINVAL;
-		goto out;
 	}
 
 	ret_val = simple_write_to_buffer(dev_data->in_buffer, MAX_BUFFER_SIZE,
