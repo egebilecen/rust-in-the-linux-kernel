@@ -33,14 +33,14 @@ void bytes_rotate_right(u8 *bytes, size_t size, size_t bit_count)
 
 	while (bit_count > 0) {
 		size_t shift_count = bit_count % 8 == 0 ? 8 : bit_count % 8;
-		u64 preserve_mask = shift_count == 1 ? MASK_1_BITS :
-				    bit_count == 2   ? MASK_2_BITS :
-				    bit_count == 3   ? MASK_3_BITS :
-				    bit_count == 4   ? MASK_4_BITS :
-				    bit_count == 5   ? MASK_5_BITS :
-				    bit_count == 6   ? MASK_6_BITS :
-				    bit_count == 7   ? MASK_7_BITS :
-						       MASK_8_BITS;
+		u64 preserve_mask = shift_count == 1 ? 0x01 :
+				    bit_count == 2   ? 0x03 :
+				    bit_count == 3   ? 0x07 :
+				    bit_count == 4   ? 0x0F :
+				    bit_count == 5   ? 0x1F :
+				    bit_count == 6   ? 0x3F :
+				    bit_count == 7   ? 0x7F :
+						       0xFF;
 
 		u8 fpb = bytes[0];
 		u8 pb;

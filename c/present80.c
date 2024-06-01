@@ -78,7 +78,7 @@ static void permutation_layer(u8 *state)
 void present80_encrypt(const u8 *key, const u8 *bytes, u8 *out)
 {
 	u8 state[PRESENT80_BLOCK_SIZE];
-	u8 round_keys[8 * PRESENT80_TOTAL_ROUNDS];
+	u8 round_keys[PRESENT80_BLOCK_SIZE * PRESENT80_TOTAL_ROUNDS];
 
 	generate_round_keys(key, round_keys);
 	memcpy(state, bytes, PRESENT80_BLOCK_SIZE);
