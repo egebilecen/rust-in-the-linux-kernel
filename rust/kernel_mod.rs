@@ -29,16 +29,6 @@ enum DeviceType {
     Encryption,
 }
 
-#[allow(unused)]
-impl DeviceType {
-    fn as_str(&self) -> &str {
-        match self {
-            DeviceType::Key => "Key",
-            DeviceType::Encryption => "Encryption",
-        }
-    }
-}
-
 struct DeviceInner {
     is_in_use: bool,
     in_buffer: [u8; MAX_BUFFER_SIZE],
@@ -68,7 +58,7 @@ impl file::Operations for DeviceOperations {
 
     fn open(data: &Self::OpenData, _file: &file::File) -> Result<Self::Data> {
         let device = data.as_arc_borrow();
-        let mut device = (get_device_inner(&device)).lock();
+        let mut device = get_device_inner(&device).lock();
 
         if device.is_in_use {
             return Err(code::EBUSY);
@@ -138,7 +128,7 @@ impl file::Operations for DeviceOperations {
 
         let recv_bytes = reader.read_all()?;
 
-        match data.r#type {
+        let len = match data.r#type {
             DeviceType::Key => {
                 if recv_bytes.len() != present80::KEY_SIZE {
                     pr_err!(
@@ -149,6 +139,8 @@ impl file::Operations for DeviceOperations {
                     pr_info!("");
                     return Err(code::EINVAL);
                 }
+
+                present80::KEY_SIZE
             }
             DeviceType::Encryption => {
                 if recv_bytes.len() != present80::BLOCK_SIZE {
@@ -160,21 +152,20 @@ impl file::Operations for DeviceOperations {
                     pr_info!("");
                     return Err(code::EINVAL);
                 }
+
+                present80::BLOCK_SIZE
             }
-        }
+        };
 
-        let mut device = (get_device_inner(&data)).lock();
-
-        for (i, &byte) in recv_bytes.iter().enumerate() {
-            device.in_buffer[i] = byte;
-        }
+        let mut device = get_device_inner(&data).lock();
+        device.in_buffer[..len].copy_from_slice(&recv_bytes);
 
         Ok(recv_bytes.len())
     }
 
     fn release(data: Self::Data, _file: &file::File) {
         let device = data.as_arc_borrow();
-        let mut device = (get_device_inner(&device)).lock();
+        let mut device = get_device_inner(&device).lock();
 
         device.is_in_use = false;
     }
@@ -182,9 +173,6 @@ impl file::Operations for DeviceOperations {
 
 impl kernel::Module for KernelModule {
     fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
-        pr_info!("Initializing...");
-        pr_info!("");
-
         let key_dev_inner = Arc::try_new(Mutex::new(DeviceInner {
             is_in_use: false,
             in_buffer: [0; MAX_BUFFER_SIZE],
@@ -220,8 +208,5 @@ impl kernel::Module for KernelModule {
 }
 
 impl Drop for KernelModule {
-    fn drop(&mut self) {
-        pr_info!("Exiting...");
-        pr_info!("");
-    }
+    fn drop(&mut self) {}
 }

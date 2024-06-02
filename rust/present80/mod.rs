@@ -27,7 +27,7 @@ impl<'a> Present80<'a> {
         Self { key }
     }
 
-    fn generate_round_keys(&self) -> Result<[u8; BLOCK_SIZE * TOTAL_ROUNDS]> {
+    fn generate_round_keys(&self) -> [u8; BLOCK_SIZE * TOTAL_ROUNDS] {
         let mut round_keys: [u8; BLOCK_SIZE * TOTAL_ROUNDS] = [0; BLOCK_SIZE * TOTAL_ROUNDS];
         let mut key_reg = *self.key;
 
@@ -49,7 +49,7 @@ impl<'a> Present80<'a> {
             round_keys[start_index..end_index].copy_from_slice(&key_reg[..BLOCK_SIZE]);
         }
 
-        Ok(round_keys)
+        round_keys
     }
 
     #[inline]
@@ -92,7 +92,7 @@ impl<'a> Present80<'a> {
     pub(crate) fn encrypt(&self, bytes: &[u8; BLOCK_SIZE]) -> Result<[u8; BLOCK_SIZE]> {
         let mut state: [u8; BLOCK_SIZE] = *bytes;
 
-        let round_keys = self.generate_round_keys()?;
+        let round_keys = self.generate_round_keys();
 
         for i in 1..=TOTAL_ROUNDS {
             let start_index = (i - 1) * BLOCK_SIZE;
