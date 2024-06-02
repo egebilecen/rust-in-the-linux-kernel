@@ -1,4 +1,5 @@
 use self::util::{bytes_rotate_right, bytes_xor};
+use kernel::error::code;
 use kernel::prelude::*;
 
 pub(crate) mod util;
@@ -30,16 +31,16 @@ impl<'a> Present80<'a> {
         let mut round_keys: [u8; BLOCK_SIZE * TOTAL_ROUNDS] = [0; BLOCK_SIZE * TOTAL_ROUNDS];
         let mut key_reg = *self.key;
 
-        round_keys[..BLOCK_SIZE].copy_from_slice(&key_reg[..8]);
+        round_keys[..BLOCK_SIZE].copy_from_slice(&key_reg[..BLOCK_SIZE]);
 
         for i in 1..TOTAL_ROUNDS {
             bytes_rotate_right(&mut key_reg, 19);
 
             key_reg[0] = (SUBSTITUTION_BOX[(key_reg[0] >> 4) as usize] << 4) | (key_reg[0] & 0x0F);
 
-            let round_counter = &((i << 15) as u32).to_be_bytes()[..3];
+            let round_counter = &(i.checked_shl(15).unwrap_or(0) as u32).to_be_bytes()[..3];
 
-            let start_index = KEY_SIZE - 1 - 3;
+            let start_index = (KEY_SIZE - 1) - 3;
             let end_index = start_index + 3;
             bytes_xor(&mut key_reg[start_index..end_index], round_counter);
 
@@ -52,11 +53,11 @@ impl<'a> Present80<'a> {
     }
 
     #[inline]
-    fn add_round_key(&self, state: &mut [u8], key: &[u8]) {
+    fn add_round_key(&self, state: &mut [u8; BLOCK_SIZE], key: &[u8; BLOCK_SIZE]) {
         bytes_xor(state, key)
     }
 
-    fn substitution_layer(&self, state: &mut [u8]) {
+    fn substitution_layer(&self, state: &mut [u8; BLOCK_SIZE]) {
         for b in state.iter_mut() {
             let upper_nibble = (*b & 0xF0) >> 4;
             let lower_nibble = *b & 0x0F;
@@ -66,7 +67,7 @@ impl<'a> Present80<'a> {
         }
     }
 
-    fn permutation_layer(&self, state: &mut [u8]) {
+    fn permutation_layer(&self, state: &mut [u8; BLOCK_SIZE]) {
         let mut permutated_state: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
 
         for ii in 0..BLOCK_SIZE {
@@ -88,17 +89,22 @@ impl<'a> Present80<'a> {
         state.copy_from_slice(&permutated_state);
     }
 
-    // TODO: Use fixed size slice as input.
-    pub(crate) fn encrypt(&self, bytes: &[u8]) -> Result<[u8; BLOCK_SIZE]> {
-        let mut state: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
-        state.copy_from_slice(&bytes[..BLOCK_SIZE]);
+    pub(crate) fn encrypt(&self, bytes: &[u8; BLOCK_SIZE]) -> Result<[u8; BLOCK_SIZE]> {
+        let mut state: [u8; BLOCK_SIZE] = *bytes;
 
         let round_keys = self.generate_round_keys()?;
 
         for i in 1..=TOTAL_ROUNDS {
             let start_index = (i - 1) * BLOCK_SIZE;
             let end_index = start_index + BLOCK_SIZE;
-            self.add_round_key(&mut state, &round_keys[start_index..end_index]);
+            let round_key: [u8; BLOCK_SIZE] =
+                if let Ok(val) = round_keys[start_index..end_index].try_into() {
+                    val
+                } else {
+                    return Err(code::ENOMEM);
+                };
+
+            self.add_round_key(&mut state, &round_key);
 
             if i != TOTAL_ROUNDS {
                 self.substitution_layer(&mut state);

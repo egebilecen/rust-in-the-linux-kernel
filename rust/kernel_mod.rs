@@ -1,11 +1,10 @@
 //! Rust kernel module.
+use crate::present80::Present80;
 use core::cmp::min;
 use kernel::error::code;
 use kernel::prelude::*;
 use kernel::sync::{smutex::Mutex, Arc, ArcBorrow};
 use kernel::{file, miscdev};
-
-use crate::present80::Present80;
 
 mod present80;
 
@@ -105,7 +104,14 @@ impl file::Operations for DeviceOperations {
         let key_device = data.key.lock();
 
         let cipher = Present80::new(&key_device.in_buffer);
-        let cipher_text = cipher.encrypt(&device.in_buffer)?;
+        let buffer = if let Ok(val) =
+            <[u8; present80::BLOCK_SIZE]>::try_from(&device.in_buffer[..present80::BLOCK_SIZE])
+        {
+            val
+        } else {
+            return Err(code::ENOMEM);
+        };
+        let cipher_text = cipher.encrypt(&buffer)?;
 
         for (i, &byte) in cipher_text.iter().enumerate() {
             device.out_buffer[i] = byte;
