@@ -173,7 +173,6 @@ static int dev_release(struct inode *inode, struct file *file)
 static int __init dev_init(void)
 {
 	int error;
-	pr_info("Initializing...\n");
 
 	init_misc_dev_group(&dev_group);
 
@@ -202,8 +201,6 @@ static void __exit dev_exit(void)
 {
 	misc_deregister(&key_dev);
 	misc_deregister(&encryption_dev);
-
-	pr_info("Exited...\n");
 }
 
 module_init(dev_init);
