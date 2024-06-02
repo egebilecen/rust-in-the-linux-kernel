@@ -4,30 +4,6 @@ from random import randbytes
 from secrets import token_bytes
 from typing import Any
 
-
-def encrypt(key: bytes, plaintext: bytes) -> bytes:
-    if len(key) != 10:
-        raise ValueError(
-            "This PRESENT-80 implementation only accepts a key of 10 bytes.")
-
-    if len(plaintext) != 8:
-        raise ValueError(
-            "This PRESENT-80 implementation only accepts a data of 8 bytes.")
-
-    key_fd = os.open("/dev/present80_key", os.O_RDWR)
-    encryption_fd = os.open("/dev/present80_encrypt", os.O_RDWR)
-
-    os.pwrite(key_fd, key, 0)
-    os.pwrite(encryption_fd, plaintext, 0)
-
-    res = os.pread(encryption_fd, len(plaintext), 0)
-
-    os.close(key_fd)
-    os.close(encryption_fd)
-
-    return res
-
-
 def printp(title: str = "", text: str = "") -> None:
     if title == "" and text == "":
         print()
@@ -40,10 +16,8 @@ def printp(title: str = "", text: str = "") -> None:
     print(text, end="")
     print()
 
-
 def get_time() -> float:
     return time.time_ns()
-
 
 def get_time_result(time_ns: float) -> dict[str, Any]:
     return {
@@ -52,7 +26,6 @@ def get_time_result(time_ns: float) -> dict[str, Any]:
         "ms": time_ns / float(10 ** 6),
         "s": time_ns / float(10 ** 9)
     }
-
 
 TOTAL_KEYS = 1000
 TOTAL_PLAINTEXTS = 1000
@@ -72,11 +45,22 @@ sum_encrypt_time = 0.0
 end_time = 0.0
 
 for key in key_list:
+    key_fd = os.open("/dev/present80_key", os.O_RDWR)
+    encryption_fd = os.open("/dev/present80_encrypt", os.O_RDWR)
+
+    os.pwrite(key_fd, key, 0)
+
     for plaintext in plaintext_list:
         enc_start = get_time()
-        encrypt(key, plaintext)
+
+        os.pwrite(encryption_fd, plaintext, 0)
+        res = os.pread(encryption_fd, len(plaintext), 0)
+
         enc_end = get_time()
         sum_encrypt_time += enc_end - enc_start
+
+    os.close(key_fd)
+    os.close(encryption_fd)
 
 end_time = get_time()
 time_diff_ns = end_time - start_time
