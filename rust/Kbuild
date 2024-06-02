@@ -1,1 +1,2 @@
-obj-m := kernel_mod.o
+obj-m += rust_misc_dev.o
+rust_misc_dev-objs += kernel_mod.o

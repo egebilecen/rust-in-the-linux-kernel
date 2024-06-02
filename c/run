@@ -1,4 +1,4 @@
 #!/bin/bash
-rmmod kernel_mod 2>&1 > /dev/null
+rmmod rust_misc_dev 2>&1 > /dev/null
 rmmod c_misc_dev 2>&1 > /dev/null
 insmod c_misc_dev.ko && script -efq /dev/null -c "dmesg" | tail -10
