@@ -1,3 +1,0 @@
-[tool.pylsp-mypy]
-enabled = true
-strict = true
