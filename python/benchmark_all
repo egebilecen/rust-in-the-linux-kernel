@@ -6,6 +6,7 @@ cd ../c/ && ./run > /dev/null
 cd $CUR_DIR && python3 benchmark.py
 
 printf "\n"
+sleep 0.5
 
 echo "Benchmarking Rust..."
 cd ../rust/ && ./run > /dev/null
