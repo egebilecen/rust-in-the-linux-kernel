@@ -44,9 +44,7 @@ for i in range(TOTAL_BENCHMARKS):
 with open(RESULTS_FILE, "w") as f:
     writer = csv.writer(f)
     writer.writerows([
-        [""] + ["#{}".format(i + 1) for i in range(TOTAL_BENCHMARKS)],
-        ["C"] + C_BENCHMARK_RESULTS,
-        ["Rust"] + RUST_BENCHMARK_RESULTS
-    ])
+        ["benchmark_no", "C", "Rust"]
+    ] + [["#{}".format(i + 1), C_BENCHMARK_RESULTS[i], RUST_BENCHMARK_RESULTS[i]] for i in range(TOTAL_BENCHMARKS)])
 
 print("Results are written into the \"{}\" file.".format(RESULTS_FILE))
