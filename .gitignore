@@ -8,6 +8,6 @@ Module.symvers
 modules.order
 rust-project.json
 compile_commands.json
-results.csv
+result_*.csv
 !.gitignore
 !.clang-format
