@@ -1,0 +1,13 @@
+.*
+*.ko
+*.mod
+*.mod.c
+*.o
+*.rmeta
+Module.symvers
+modules.order
+rust-project.json
+compile_commands.json
+results.csv
+!.gitignore
+!.clang-format
