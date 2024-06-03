@@ -1,5 +1,7 @@
 import os
+import sys
 import time
+import json
 from random import randbytes
 from secrets import token_bytes
 from typing import Any
@@ -27,17 +29,17 @@ def get_time_result(time_ns: float) -> dict[str, Any]:
         "s": time_ns / float(10 ** 9)
     }
 
-TOTAL_KEYS = 1000
-TOTAL_PLAINTEXTS = 1000
-TOTAL_ENCRYPTION = TOTAL_KEYS * TOTAL_PLAINTEXTS
+TOTAL_KEY = 1000
+TOTAL_PLAINTEXT = 1000
+TOTAL_ENCRYPTION = TOTAL_KEY * TOTAL_PLAINTEXT
 
 key_list: list[bytes] = []
 plaintext_list: list[bytes] = []
 
-for _ in range(TOTAL_KEYS):
+for _ in range(TOTAL_KEY):
     key_list.append(token_bytes(10))
 
-for _ in range(TOTAL_PLAINTEXTS):
+for _ in range(TOTAL_PLAINTEXT):
     plaintext_list.append(randbytes(8))
 
 start_time = get_time()
@@ -68,11 +70,20 @@ time_diff_ns = end_time - start_time
 time_result = get_time_result(time_diff_ns)
 time_result["avg"] = get_time_result(sum_encrypt_time / TOTAL_ENCRYPTION)
 
-printp("TOTAL KEYS", str(TOTAL_KEYS))
-printp("TOTAL PLAINTEXTS", str(TOTAL_PLAINTEXTS))
-printp("TOTAL ENCRYPTION", str(TOTAL_ENCRYPTION))
-printp("TOTAL TIME",
-       "{:.2f}sec / {:.2f}ms".format(time_result["s"], time_result["ms"]))
-printp("AVG. ENCRYPTION TIME",
-       "{:.2f}ns / {:.2f}us".format(time_result["avg"]["ns"],
-                                    time_result["avg"]["us"]))
+if len(sys.argv) > 1 and sys.argv[1] == "json":
+    print(json.dumps({
+        "total_key": TOTAL_KEY,
+        "total_plaintext": TOTAL_PLAINTEXT,
+        "total_encryption": TOTAL_ENCRYPTION,
+        "total_time": {k: v for k, v in time_result.items() if k != "avg"},
+        "avg_encryption_time": time_result["avg"]
+    }))
+else:
+    printp("TOTAL KEY", str(TOTAL_KEY))
+    printp("TOTAL PLAINTEXT", str(TOTAL_PLAINTEXT))
+    printp("TOTAL ENCRYPTION", str(TOTAL_ENCRYPTION))
+    printp("TOTAL TIME",
+           "{:.2f}sec / {:.2f}ms".format(time_result["s"], time_result["ms"]))
+    printp("AVG. ENCRYPTION TIME",
+           "{:.2f}ns / {:.2f}us".format(time_result["avg"]["ns"],
+                                        time_result["avg"]["us"]))
