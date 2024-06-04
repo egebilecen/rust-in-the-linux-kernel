@@ -6,4 +6,4 @@ else
     USE_CLIPPY=1
 fi
 
-make KDIR=~/linux LLVM=1 CLIPPY=$USE_CLIPPY && modinfo kernel_mod.ko
+make KDIR=~/linux LLVM=1 CLIPPY=$USE_CLIPPY && modinfo rust_misc_dev.ko
