@@ -34,6 +34,10 @@ for i in range(TOTAL_BENCHMARKS):
     RESULTS_C_AVG_ENCRYPTION_TIME.append(format_float(json_obj["avg_encryption_time"]["us"]))
     RESULTS_C_TOTAL_TIME.append(format_float(json_obj["total_time"]["s"]))
 
+    print("Benchmark #{} completed.".format(i + 1))
+
+print()
+
 print("Benchmarking Rust...")
 exec_cmd("./run", RUST_WORKING_DIR)
 
@@ -44,6 +48,8 @@ for i in range(TOTAL_BENCHMARKS):
 
     RESULTS_RUST_AVG_ENCRYPTION_TIME.append(format_float(json_obj["avg_encryption_time"]["us"]))
     RESULTS_RUST_TOTAL_TIME.append(format_float(json_obj["total_time"]["s"]))
+
+    print("Benchmark #{} completed.".format(i + 1))
 
 common_row = ["benchmark_no", "C", "Rust"]
 
