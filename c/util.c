@@ -1,28 +1,28 @@
 #include "util.h"
 
-void print_binary(const u8 *bytes, size_t size, size_t group)
-{
-	size_t group_counter = 0;
-	pr_info("");
+/* void print_binary(const u8 *bytes, size_t size, size_t group) */
+/* { */
+/* 	size_t group_counter = 0; */
+/* 	pr_info(""); */
 
-	for (size_t i = 0; i < size; i++) {
-		u8 b = bytes[i];
+/* 	for (size_t i = 0; i < size; i++) { */
+/* 		u8 b = bytes[i]; */
 
-		for (size_t j = 0; j < 8; j++) {
-			size_t mask = 0x01 << (7 - j);
-			pr_cont("%d", (b & mask) > 0 ? 1 : 0);
+/* 		for (size_t j = 0; j < 8; j++) { */
+/* 			size_t mask = 0x01 << (7 - j); */
+/* 			pr_cont("%d", (b & mask) > 0 ? 1 : 0); */
 
-			group_counter++;
+/* 			group_counter++; */
 
-			if (group_counter == group) {
-				group_counter = 0;
-				pr_cont(" ");
-			}
-		}
-	}
+/* 			if (group_counter == group) { */
+/* 				group_counter = 0; */
+/* 				pr_cont(" "); */
+/* 			} */
+/* 		} */
+/* 	} */
 
-	pr_cont("\n");
-}
+/* 	pr_cont("\n"); */
+/* } */
 
 void bytes_rotate_right(u8 *bytes, size_t size, size_t bit_count)
 {
@@ -69,79 +69,79 @@ void bytes_rotate_right(u8 *bytes, size_t size, size_t bit_count)
 	}
 }
 
-void bytes_shift_right(u8 *bytes, size_t size, size_t shift_count)
-{
-	if (shift_count >= size) {
-		buffer_zeros(bytes, size);
-		return;
-	}
+/* void bytes_shift_right(u8 *bytes, size_t size, size_t shift_count) */
+/* { */
+/* 	if (shift_count >= size) { */
+/* 		buffer_zeros(bytes, size); */
+/* 		return; */
+/* 	} */
 
-	while (shift_count > 0) {
-		u8 pb;
-		u8 npb;
+/* 	while (shift_count > 0) { */
+/* 		u8 pb; */
+/* 		u8 npb; */
 
-		for (size_t i = 0; i < size; i++) {
-			u8 *b = bytes + i;
-			u8 *nb = i == size - 1 ? bytes : (bytes + (i + 1));
+/* 		for (size_t i = 0; i < size; i++) { */
+/* 			u8 *b = bytes + i; */
+/* 			u8 *nb = i == size - 1 ? bytes : (bytes + (i + 1)); */
 
-			if (i == 0) {
-				pb = *b;
-				npb = *nb;
-				*b = 0x00;
-			} else if (i == size - 1) {
-				*b = pb;
-			} else {
-				*b = pb;
-				pb = npb;
-				npb = *nb;
-			}
-		}
+/* 			if (i == 0) { */
+/* 				pb = *b; */
+/* 				npb = *nb; */
+/* 				*b = 0x00; */
+/* 			} else if (i == size - 1) { */
+/* 				*b = pb; */
+/* 			} else { */
+/* 				*b = pb; */
+/* 				pb = npb; */
+/* 				npb = *nb; */
+/* 			} */
+/* 		} */
 
-		shift_count--;
-	}
-}
+/* 		shift_count--; */
+/* 	} */
+/* } */
 
-void bytes_shift_left(u8 *bytes, size_t size, size_t shift_count)
-{
-	if (shift_count >= size) {
-		buffer_zeros(bytes, size);
-		return;
-	}
+/* void bytes_shift_left(u8 *bytes, size_t size, size_t shift_count) */
+/* { */
+/* 	if (shift_count >= size) { */
+/* 		buffer_zeros(bytes, size); */
+/* 		return; */
+/* 	} */
 
-	while (shift_count > 0) {
-		u8 pb;
-		u8 npb;
+/* 	while (shift_count > 0) { */
+/* 		u8 pb; */
+/* 		u8 npb; */
 
-		/* For some reason, kernel crashes when I do something in the following reverse for loop:
-         * for (size_t i = size - 1; i >= 0; i--) { ... }
-         *
-         * For example:
-         * u8 *b = bytes + i;
-         * *b = 0; <-- Crash / infinite loop occurs.
-         * So I had to create regular loop and then store the reverse index in the variable `j`.
-         * */
-		for (size_t i = 0; i < size; i++) {
-			size_t j = size - 1 - i;
+/* 		/1* For some reason, kernel crashes when I do something in the following reverse for loop: */
+/*          * for (size_t i = size - 1; i >= 0; i--) { ... } */
+/*          * */
+/*          * For example: */
+/*          * u8 *b = bytes + i; */
+/*          * *b = 0; <-- Crash / infinite loop occurs. */
+/*          * So I had to create regular loop and then store the reverse index in the variable `j`. */
+/*          * *1/ */
+/* 		for (size_t i = 0; i < size; i++) { */
+/* 			size_t j = size - 1 - i; */
 
-			u8 *b = bytes + j;
-			u8 *nb = j == 0 ? bytes : (bytes + (j - 1));
+/* 			u8 *b = bytes + j; */
+/* 			u8 *nb = j == 0 ? bytes : (bytes + (j - 1)); */
 
-			if (j == 0) {
-				*b = pb;
-			} else if (j == size - 1) {
-				pb = *b;
-				npb = *nb;
-				*b = 0x00;
-			} else {
-				*b = pb;
-				pb = npb;
-				npb = *nb;
-			}
-		}
+/* 			if (j == 0) { */
+/* 				*b = pb; */
+/* 			} else if (j == size - 1) { */
+/* 				pb = *b; */
+/* 				npb = *nb; */
+/* 				*b = 0x00; */
+/* 			} else { */
+/* 				*b = pb; */
+/* 				pb = npb; */
+/* 				npb = *nb; */
+/* 			} */
+/* 		} */
 
-		shift_count--;
-	}
-}
+/* 		shift_count--; */
+/* 	} */
+/* } */
 
 void bytes_xor(u8 *first, const u8 *second, size_t size)
 {
