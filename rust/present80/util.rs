@@ -3,9 +3,6 @@ use kernel::pr_cont;
 use kernel::prelude::*;
 use kernel::random::getrandom;
 
-// TODO: Comment out these unused functions when building the module
-//       to compare its size with the C module.
-
 pub(crate) fn bytes_rotate_right(bytes: &mut [u8], bit_count: usize) {
     if bytes.is_empty() {
         return;
