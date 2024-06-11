@@ -70,19 +70,18 @@ impl<'a> Present80<'a> {
     fn permutation_layer(&self, state: &mut [u8; BLOCK_SIZE]) {
         let mut permutated_state: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
 
-        for ii in 0..BLOCK_SIZE {
-            let i = (BLOCK_SIZE - 1) - ii;
+        for i in (0..BLOCK_SIZE).rev() {
             let byte = state[i];
 
             for j in 0..8 {
-                let pos = (ii * BLOCK_SIZE) + j;
                 let bit: u8 = if byte & (0x01 << j) != 0 { 1 } else { 0 };
+                let bit_pos = ((BLOCK_SIZE - 1 - i) * BLOCK_SIZE) + j;
 
-                let new_pos = PERMUTATION_BOX[pos];
-                let byte_pos = (BLOCK_SIZE - 1) - ((new_pos / 8) as usize);
-                let bit_pos = new_pos % 8;
+                let new_bit_pos = PERMUTATION_BOX[bit_pos];
+                let byte_pos = (BLOCK_SIZE - 1) - ((new_bit_pos / 8) as usize);
+                let bit_shift = new_bit_pos % 8;
 
-                permutated_state[byte_pos] |= bit << bit_pos;
+                permutated_state[byte_pos] |= bit << bit_shift;
             }
         }
 
