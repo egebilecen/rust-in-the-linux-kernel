@@ -40,9 +40,9 @@ static void init_misc_dev_data(struct misc_dev_data *data,
 	data->is_in_use = false;
 
 	/* When the device is opened for the first time,
-     * buffer is set to all zeroes so we don't need
-     * to do anything about it.
-     */
+	 * buffer is set to all zeroes so we don't need
+	 * to do anything about it.
+	 */
 }
 
 static void init_misc_dev_group(struct misc_dev_group *group)
