@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
-import subprocess
 import json
 import csv
-
-def exec_cmd(cmd, cwd=".", shell=False):
-    proc = subprocess.Popen(cmd, cwd=cwd, shell=shell, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    outs, errs = proc.communicate()
-    return (proc.returncode, outs, errs)
+from common import C_WORKING_DIR, RUST_WORKING_DIR, exec_cmd
 
 def format_float(num):
     return "{:.2f}".format(num)
 
 TOTAL_BENCHMARKS = 5
-C_WORKING_DIR = "../c/"
-RUST_WORKING_DIR = "../rust/"
 
 RESULTS_FILE = "result_{}.csv"
-
 RESULTS_C_AVG_ENCRYPTION_TIME = []
 RESULTS_RUST_AVG_ENCRYPTION_TIME = []
 
