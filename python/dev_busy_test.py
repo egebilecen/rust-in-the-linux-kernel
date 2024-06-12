@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 
 fd = os.open("/dev/present80_encrypt", os.O_RDWR)
