@@ -12,3 +12,4 @@ result_*.csv
 __pycache__/
 !.gitignore
 !.clang-format
+!misc/*
