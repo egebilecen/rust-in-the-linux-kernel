@@ -65,6 +65,9 @@ pub(crate) fn bytes_xor(first: &mut [u8], second: &[u8]) {
     }
 }
 
+// Functions below were used for debug purposes. They are not commented out unlike in the C module.
+// This is because Rust will not include these functions in the final object file output as they are 
+// not used in the code.
 #[allow(dead_code)]
 pub(crate) fn rand_bytes(size: usize) -> Result<Vec<u8>> {
     const MAX_SIZE: usize = 128;
