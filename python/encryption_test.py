@@ -2,7 +2,7 @@
 import os
 
 TEST_LIST = [
-    # (<key>, <plain text>, <cipher text>)
+    # (<key>, <plain text>, <expected cipher text>)
     (
         b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
         b"\x00\x00\x00\x00\x00\x00\x00\x00",
@@ -27,18 +27,24 @@ TEST_LIST = [
 
 print("Total tests: {}\n".format(len(TEST_LIST)))
 
+# Open the key device.
 key_fd = os.open("/dev/present80_key", os.O_RDWR)
+# Open the encryption device.
 encryption_fd = os.open("/dev/present80_encrypt", os.O_RDWR)
 
+# Loop over each entry.
 for (i, (key, plain_text, cipher_text)) in enumerate(TEST_LIST):
     print("[Test {}]".format(i + 1))
     print("Key:\t\t{}".format(key.hex()))
     print("Plaintext:\t{}".format(plain_text.hex()))
     print("Ciphertext:\t{}".format(cipher_text.hex()))
 
+    # Set the key.
     os.pwrite(key_fd, key, 0)
+    # Encrypt the plaintext.
     os.pwrite(encryption_fd, plain_text, 0)
 
+    # Read the encryption result.
     res = os.pread(encryption_fd, len(plain_text), 0)
 
     print("Result:\t\t{}".format(res.hex()))
@@ -51,5 +57,6 @@ for (i, (key, plain_text, cipher_text)) in enumerate(TEST_LIST):
 
     print()
 
+# Close the devices.
 os.close(key_fd)
 os.close(encryption_fd)

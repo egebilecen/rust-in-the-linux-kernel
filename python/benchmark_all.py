@@ -6,8 +6,10 @@ from common import C_WORKING_DIR, RUST_WORKING_DIR, exec_cmd
 def format_float(num):
     return "{:.2f}".format(num)
 
+# Number of benchmarks.
 TOTAL_BENCHMARKS = 5
 
+# Output results file.
 RESULTS_FILE = "result_{}.csv"
 RESULTS_C_AVG_ENCRYPTION_TIME = []
 RESULTS_RUST_AVG_ENCRYPTION_TIME = []
@@ -18,6 +20,7 @@ RESULTS_RUST_TOTAL_TIME = []
 print("Benchmarking C...")
 exec_cmd("./run", C_WORKING_DIR)
 
+# Benchmark the C module by running the "benchmark.py".
 for i in range(TOTAL_BENCHMARKS):
     res = exec_cmd("./benchmark.py json".split())
     json_str = res[1].decode()
@@ -33,6 +36,7 @@ print()
 print("Benchmarking Rust...")
 exec_cmd("./run", RUST_WORKING_DIR)
 
+# Benchmark the Rust module by running the "benchmark.py".
 for i in range(TOTAL_BENCHMARKS):
     res = exec_cmd("./benchmark.py json".split())
     json_str = res[1].decode()
@@ -45,6 +49,7 @@ for i in range(TOTAL_BENCHMARKS):
 
 common_row = ["benchmark_no", "C", "Rust"]
 
+# Save the results.
 with open(RESULTS_FILE.format("avg_enc_time_us"), "w") as f:
     writer = csv.writer(f)
     writer.writerow(common_row)

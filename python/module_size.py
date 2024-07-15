@@ -3,6 +3,7 @@ from common import C_WORKING_DIR, RUST_WORKING_DIR, exec_cmd
 from typing import Literal
 import sys
 
+# Parse the "objdump" result and return the size.
 def get_module_size(_type: str, section: Literal["*"] | list[str] = "*", print_text: bool = False) -> int:
     cmd = ""
     cwd = ""
