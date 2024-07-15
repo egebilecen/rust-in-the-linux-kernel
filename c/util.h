@@ -3,6 +3,7 @@
 
 #include <linux/string.h>
 
+/* Set the buffer with all zeros. */
 #define buffer_zeros(buff, size) memset(buff, 0, size)
 
 /* void print_binary(const u8 *bytes, size_t size, size_t group); */
