@@ -1,5 +1,5 @@
 # Rust in the Linux Kernel - Project Source Code
-This repository contains code and other scripts used in the research paper that evaluates the Rust in the Linux kernel.
+This repository contains code and other scripts used in the [research paper](https://ege.r0m.cc/shared/Rust_in_the_Linux_Kernel_Research_Paper.pdf) that evaluates the Rust in the Linux kernel.
 
 ## Folders
 `c`: Contains code for loadable kernel module written in C.
